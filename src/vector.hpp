@@ -273,7 +273,7 @@ namespace sjtu {
             if (id > elementNum)throw index_out_of_bound();
             //"Try to Insert Element Out of Range of Vector"
             if (elementNum == memorySize) {
-                T *originalData = data;
+                T **originalData = data;
                 memorySize <<= 1;
                 data = (T **) ::operator new(sizePtr * memorySize);
                 memset(data, 0, memorySize);
@@ -292,7 +292,7 @@ namespace sjtu {
             if (id >= elementNum)throw index_out_of_bound();
             //"Try to Erase Element Out of Range of Vector"
             delete data[id];
-            for (size_t i = id; id < elementNum - 1; ++i)data[i] = data[i + 1];
+            for (size_t i = id; i < elementNum - 1; ++i)data[i] = data[i + 1];
             --elementNum;
             return iterator(this, id);
         }
@@ -300,7 +300,7 @@ namespace sjtu {
 
         void push_back(const T &value) {
             if (elementNum == memorySize) {
-                T *originalData = data;
+                T **originalData = data;
                 memorySize <<= 1;
                 data = (T **) ::operator new(sizePtr * memorySize);
                 memset(data, 0, memorySize);
@@ -310,6 +310,7 @@ namespace sjtu {
             data[elementNum] = new T(value);
             ++elementNum;
         }
+
 
         void pop_back() {
             if (elementNum == 0)throw container_is_empty();

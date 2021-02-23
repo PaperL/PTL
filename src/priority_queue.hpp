@@ -7,67 +7,94 @@
 
 namespace sjtu {
 
-/**
- * a container like std::priority_queue which is a heap internal.
- */
-template<typename T, class Compare = std::less<T>>
-class priority_queue {
-public:
-	/**
-	 * TODO constructors
-	 */
-	priority_queue() {}
-	priority_queue(const priority_queue &other) {}
-	/**
-	 * TODO deconstructor
-	 */
-	~priority_queue() {}
-	/**
-	 * TODO Assignment operator
-	 */
-	priority_queue &operator=(const priority_queue &other) {}
-	/**
-	 * get the top of the queue.
-	 * @return a reference of the top element.
-	 * throw container_is_empty if empty() returns true;
-	 */
-	const T & top() const {
+    template<typename T, class Compare = std::less<T>>
+    class priority_queue {
+    private:
+        size_t elementNum;
+        struct lNode {
+            T *data;
+            lNode *lChild, *rChild;
+        } *root;
 
-	}
-	/**
-	 * TODO
-	 * push new element to the priority queue.
-	 */
-	void push(const T &e) {
+        Compare cmp;
 
-	}
-	/**
-	 * TODO
-	 * delete the top element.
-	 * throw container_is_empty if empty() returns true;
-	 */
-	void pop() {
+        void dfsDel(lNode *p) {
+            if (p == nullptr)return;
+            if (p->lChild != nullptr || p->rChild != nullptr) {
+                dfsDel(p->lChild);
+                dfsDel(p->rChild);
+            } else delete p;
+        }
 
-	}
-	/**
-	 * return the number of the elements.
-	 */
-	size_t size() const {
+        void dfsCopy(lNode *myself, lNode *right) {
+            if (p == nullptr)return;
+            if (p->lChild != nullptr || p->rChild != nullptr) {
+                dfsDel(p->lChild);
+                dfsDel(p->rChild);
+            } else delete p;
+        }
 
-	}
-	/**
-	 * check if the container has at least an element.
-	 * @return true if it is empty, false if it has at least an element.
-	 */
-	bool empty() const {
+        lNode *dfsMerge(lNode *H1, lNode *H2) {
+            if (H1 == nullptr)return H2;
+            if (H2 == nullptr)return H1;
+            if (!cmp(H1, H2)) {
+                lNode *tempPtr = H1;
+                H1 = H2;
+                H2 = tempPtr;
+            }
+            if (H1->lChild == nullptr)H1->lChild = H2;
+            else {
+                H1->rChild = dfsMerge(H1->rChild, H2);
+                lNode *tempPtr = H1->lChild;
+                H1->lChild = H1->rChild;
+                H1->rChild = tempPtr;
+            }
+            return H1;
+        }
 
-	}
-	/**
-	 * return a merged priority_queue with at least O(logn) complexity.
-	 */
-	void merge(priority_queue &other) {
-	}
-};
+    public:
+
+        priority_queue() : elementNum(0), root(nullptr) {}
+
+        priority_queue(const priority_queue &other) : elementNum(0), root(nullptr) {}
+
+        ~priority_queue() { dfsDel(root); }
+
+
+        priority_queue &operator=(const priority_queue &other) {}
+
+
+        const T &top() const {
+            if (elementNum == 0)throw container_is_empty();
+            return *(root->data);
+        }
+
+        void push(const T &arg) {
+            lNode *newNode;
+            newNode->data = new T(arg);
+            newNode->lChild = nullptr;
+            newNode->rChild = nullptr;
+            root = dfsMerge(newNode, root);
+            ++elementNum;
+        }
+
+        void pop() {
+            if (elementNum == 0)throw container_is_empty();
+            lNode *lH = root->lChild, *rH = root->rChild;
+            delete root->data;
+            delete root;
+            root = dfsMerge(lH, rH);
+            --elementNum;
+        }
+
+        size_t size() const { return elementNum; }
+
+        bool empty() const { return elementNum == 0; }
+
+        void merge(priority_queue &other) {
+
+        }
+    };
 
 }
 
