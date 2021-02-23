@@ -2,6 +2,7 @@
 
 #include "exceptions.hpp"
 #include "vector.hpp"
+#include "priority_queue.hpp"
 #include <string>
 
 using namespace sjtu;
@@ -78,9 +79,82 @@ void vectorTest() {
     std::cout << "===cp10===" << std::endl;
 }
 
+void priority_queueTest() {
+    priority_queue<int, std::less<int> > tpq;
+    std::cout << tpq.size() << std::endl;
+    std::cout << "===cp1===" << std::endl;
+
+    tpq.push(1);
+    tpq.push(2);
+    std::cout << "===cp2===" << std::endl;
+
+    std::cout << tpq.size() << std::endl;
+    std::cout << tpq.empty() << std::endl;
+    std::cout << "===cp3===" << std::endl;
+
+    std::cout << tpq.top() << std::endl;
+    std::cout << "===cp4===" << std::endl;
+
+    tpq.push(0);
+    std::cout << tpq.top() << std::endl;
+    tpq.pop();
+    std::cout << tpq.top() << std::endl;
+    tpq.pop();
+    std::cout << tpq.top() << std::endl;
+    std::cout << "===cp5===" << std::endl;
+
+    tpq.push(1);
+    priority_queue<int, std::less<int> > ttpq1(tpq);
+    while (!ttpq1.empty()) {
+        std::cout << ttpq1.top();
+        ttpq1.pop();
+    }
+    std::cout << std::endl;
+
+    tpq.push(5);
+    ttpq1 = tpq;
+    while (!ttpq1.empty()) {
+        std::cout << ttpq1.top();
+        ttpq1.pop();
+    }
+    std::cout << std::endl;
+
+    tpq.push(4);
+    ttpq1 = tpq;
+    while (!ttpq1.empty()) {
+        std::cout << ttpq1.top();
+        ttpq1.pop();
+    }
+    std::cout << std::endl;
+
+    tpq.push(3);
+    ttpq1 = tpq;
+    while (!ttpq1.empty()) {
+        std::cout << ttpq1.top();
+        ttpq1.pop();
+    }
+    std::cout << std::endl;
+    std::cout << "===cp6===" << std::endl;
+
+    priority_queue<int, std::less<int> > ttpq2, ttpq3;
+    for (int i = 0; i < 5; ++i)ttpq2.push(i * 10);
+    for (int i = 0; i < 5; ++i)ttpq3.push(i * 13 - 6);
+    ttpq2.merge(ttpq3);
+    std::cout << "===cp7===" << std::endl;
+
+    std::cout << ttpq2.size() << std::endl;
+    while (!ttpq2.empty()) {
+        std::cout << ttpq2.top() << " ";
+        ttpq2.pop();
+    }
+    std::cout << std::endl;
+    std::cout << "===cp8===" << std::endl;
+}
+
 int main() {
     try {
-        vectorTest();
+        //vectorTest();
+        priority_queueTest();
     }
     catch (sjtu::exception xept) {
         std::cout << xept.what() << std::endl;
