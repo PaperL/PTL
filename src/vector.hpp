@@ -13,16 +13,29 @@ namespace sjtu {
 
     template<typename T>
     class vector {
-    public:
-        const int sizeT = sizeof(T);
-        T *data;
+    private:
+        const size_t sizePtr = sizeof(T *);
+        T **data;
         size_t elementNum, memorySize; // 此处 memroySize 单位为 sizeof(T)
 
+        inline void initMem() {
+            data = (T **) ::operator new(sizePtr * memorySize);
+            memset(data, 0, memorySize);
+        }
+
+        inline void delMem() {
+            for (size_t i = 0; i < memorySize; ++i)delete data[i];
+            delete[] data;
+        }
+
+    public:
         class const_iterator;
 
         class iterator {
         private:
             friend class const_iterator;
+
+            friend class vector<T>;
 
             vector<T> *subject;
             size_t index;
@@ -90,7 +103,7 @@ namespace sjtu {
             }// --iter
 
 
-            T &operator*() const { return subject->data[index]; }// *iter
+            T &operator*() const { return *(subject->data[index]); }// *iter
 
 
             bool operator==(const iterator &rhs) const { return (index == rhs.index && subject == rhs.subject); }
@@ -105,6 +118,8 @@ namespace sjtu {
         class const_iterator {
         private:
             friend class iterator;
+
+            friend class vector<T>;
 
             const vector<T> *subject;
             size_t index;
@@ -122,8 +137,7 @@ namespace sjtu {
 
 
             int operator-(const const_iterator &rhs) const {
-                if (subject != rhs.subject)
-                    throw invalid_iterator();
+                if (subject != rhs.subject) throw invalid_iterator();
                     //"Try to Minus Two Iterators of Different Vector (const_iterator)"
                 else return (index - rhs.index);
             }
@@ -161,7 +175,7 @@ namespace sjtu {
             }// --iter
 
 
-            const T &operator*() const { return subject->data[index]; }// *iter
+            const T &operator*() const { return *(subject->data[index]); }// *iter
 
             bool operator==(const iterator &rhs) const { return (index == rhs.index && subject == rhs.subject); }
 
@@ -173,63 +187,62 @@ namespace sjtu {
         };
 
 
-        vector() : data(nullptr), elementNum(0), memorySize(VECTOR_INITIAL_SIZE) {
-            data = (T *) ::operator new(sizeT * memorySize);
-        }
+        vector() : data(nullptr), elementNum(0), memorySize(VECTOR_INITIAL_SIZE) { initMem(); }
 
         vector(const vector &other) : elementNum(other.elementNum), memorySize(other.memorySize) {
-            data = (T *) ::operator new(sizeT * memorySize);
+            initMem();
+            for (size_t i = 0; i < elementNum; ++i)data[i] = new T(*(other.data[i]));
             // 如果直接 operator new() 返回类型为 void*
         }
 
-        ~vector() { delete[] data; }
+        ~vector() { delMem(); }
 
 
         vector &operator=(const vector &other) {
             if (this == &other)return *this;
+            delMem();
             elementNum = other.elementNum;
             memorySize = other.memorySize;
-            delete[] data;
-            data = (T *) ::operator new(sizeT * memorySize);
-            memcpy(data, other.data, sizeT * elementNum);
+            initMem();
+            for (size_t i = 0; i < elementNum; ++i)data[i] = new T(*(other.data[i]));
         }
 
 
         T &at(const size_t &pos) {
             if (pos >= elementNum)throw index_out_of_bound();
                 //"Try to Get Vector Element Out of Range (at)"
-            else return data[pos];
+            else return *(data[pos]);
         }
 
         const T &at(const size_t &pos) const {
             if (pos >= elementNum)throw index_out_of_bound();
                 // "Try to Get Vector Element Out of Range (const at)"
-            else return data[pos];
+            else return *(data[pos]);
         }
 
         T &operator[](const size_t &pos) {
             if (pos >= elementNum)throw index_out_of_bound();
                 // "Try to Get Vector Element Out of Range (operator[])"
-            else return data[pos];
+            else return *(data[pos]);
         }
 
         const T &operator[](const size_t &pos) const {
             if (pos >= elementNum)throw index_out_of_bound();
                 //"Try to Get Vector Element Out of Range (const operator[])"
-            else return data[pos];
+            else return *(data[pos]);
         }
 
 
         const T &front() const {
             if (elementNum == 0)throw container_is_empty();
                 //"Try to Get Empty Vector's Front Element"
-            else return data[0];
+            else return *(data[0]);
         }
 
         const T &back() const {
             if (elementNum == 0)throw container_is_empty();
                 //"Try to Get Empty Vector's Back Element"
-            else return data[elementNum - 1];
+            else return *(data[elementNum - 1]);
         }
 
 
@@ -247,43 +260,41 @@ namespace sjtu {
         size_t size() const { return elementNum; }
 
         void clear() {
-            delete[] data;
-            data = (T *) ::operator new(sizeT * memorySize);
+            delMem();
             elementNum = 0;
             memorySize = VECTOR_INITIAL_SIZE;
+            initMem();
         }
 
 
-        iterator insert(iterator pos, const T &value) {
-            if (elementNum == memorySize) {
-                T *originalData = data;
-                memorySize <<= 1;
-                data = (T *) ::operator new(sizeT * memorySize);
-                memcpy(data, originalData, sizeT * elementNum);
-                delete[] originalData;
-            }
-            for (auto i = this->end(); i != pos; i--) *i = *(i - 1);
-            *pos = value;
-            ++elementNum;
-            return pos;
-        }
+        iterator insert(iterator pos, const T &value) { return insert(pos.index, value); }
 
         iterator insert(const size_t &id, const T &value) {
             if (id > elementNum)throw index_out_of_bound();
             //"Try to Insert Element Out of Range of Vector"
-            return insert(iterator(this, id), value);
+            if (elementNum == memorySize) {
+                T *originalData = data;
+                memorySize <<= 1;
+                data = (T **) ::operator new(sizePtr * memorySize);
+                memset(data, 0, memorySize);
+                memcpy(data, originalData, sizePtr * elementNum);
+                delete[] originalData;
+            }
+            for (size_t i = elementNum; i > id; --i)data[i] = data[i - 1];
+            data[id] = new T(value);
+            ++elementNum;
+            return iterator(this, id);
         }
 
-        iterator erase(iterator pos) {
-            for (auto i = pos; i != this->end(); i++) *i = *(i + 1);
-            --elementNum;
-            return pos;
-        }
+        iterator erase(iterator pos) { return erase(pos.index); }
 
         iterator erase(const size_t &id) {
             if (id >= elementNum)throw index_out_of_bound();
             //"Try to Erase Element Out of Range of Vector"
-            return erase(iterator(this, id));
+            delete data[id];
+            for (size_t i = id; id < elementNum - 1; ++i)data[i] = data[i + 1];
+            --elementNum;
+            return iterator(this, id);
         }
 
 
@@ -291,11 +302,12 @@ namespace sjtu {
             if (elementNum == memorySize) {
                 T *originalData = data;
                 memorySize <<= 1;
-                data = (T *) ::operator new(sizeT * memorySize);
-                memcpy(data, originalData, sizeT * elementNum);
+                data = (T **) ::operator new(sizePtr * memorySize);
+                memset(data, 0, memorySize);
+                memcpy(data, originalData, sizePtr * elementNum);
                 delete[] originalData;
             }
-            data[elementNum] = value;
+            data[elementNum] = new T(value);
             ++elementNum;
         }
 
@@ -303,7 +315,8 @@ namespace sjtu {
             if (elementNum == 0)throw container_is_empty();
                 //"Try to Pop Back Element from Empty Vector"
             else {
-                data[elementNum - 1].~T();
+                delete data[elementNum - 1];
+                data[elementNum - 1] = nullptr;
                 --elementNum;
             }
         }

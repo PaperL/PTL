@@ -2,6 +2,7 @@
 
 #include "exceptions.hpp"
 #include "vector.hpp"
+#include <string>
 
 using namespace sjtu;
 
