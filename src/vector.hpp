@@ -83,8 +83,9 @@ namespace sjtu {
 
 
             iterator operator++(int) {
+                iterator tempIt(*this);
                 ++index;
-                return (*this);
+                return tempIt;
             }// iter++
 
             iterator &operator++() {
@@ -93,8 +94,9 @@ namespace sjtu {
             }// ++iter
 
             iterator operator--(int) {
+                iterator tempIt(*this);
                 --index;
-                return (*this);
+                return tempIt;
             }// iter--
 
             iterator &operator--() {
@@ -155,8 +157,9 @@ namespace sjtu {
 
 
             const_iterator operator++(int) {
+                const_iterator tempIt(*this);
                 ++index;
-                return (*this);
+                return tempIt;
             }// iter++
 
             const_iterator &operator++() {
@@ -165,8 +168,9 @@ namespace sjtu {
             }// ++iter
 
             const_iterator operator--(int) {
+                const_iterator tempIt(*this);
                 --index;
-                return (*this);
+                return tempIt;
             }// iter--
 
             const_iterator &operator--() {
