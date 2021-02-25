@@ -8,21 +8,56 @@
 
 namespace sjtu {
 
-    template<class T, size_t BlockElementNumber = 128, size_t MergeBoundary = 32>
+    template<class T, size_t BLOCK_ELEMENT_NUMBER = 128, size_t BLOCK_MERGE_BOUND = 32>
     class deque {
     private:
-        size_t memorySize, mergeBoundary;
+        size_t totElementNumber;
 
         // Unrolled Linked List Node
         class ULLBlock {
-        public:
+            friend class deque;
+
+        private:
+            const size_t sizePtr = sizeof(T *);
+
             ULLBlock *preBlock, *nxtBlock;
             size_t elementNum;
             T **elementData;
 
+            void splitBlock() {
+                const size_t leftNum = BLOCK_ELEMENT_NUMBER / 2;
+                const size_t nxtNum = elementNum - BLOCK_ELEMENT_NUMBER / 2;
+                ULLBlock *newBlock = new ULLBlock;
+
+                newBlock->preBlock = this;
+                newBlock->nxtBlock = nxtBlock;
+                newBlock->elementNum = nxtNum;
+                for (size_t i = leftNum; i < elementNum; ++i)
+                    newBlock->elementData[i - leftNum] = elementData[i];
+
+                if (nxtBlock != nullptr) nxtBlock->preBlock = newBlock;
+                nxtBlock = newBlock;
+
+                memset(elementData[leftNum], 0, sizePtr * nxtNum);
+                elementNum = leftNum;
+            }
+
+            void mergeBlock() {
+                for (size_t i = 0; i < nxtBlock->elementNum; ++i)
+                    elementData[elementNum + i] = nxtBlock->elementData[i];
+                elementNum += nxtBlock->elementNum;
+
+                nxtBlock = nxtBlock->nxtBlock;
+                if (nxtBlock != nullptr) {
+                    delete nxtBlock->preBlock;
+                    nxtBlock->preBlock = this;
+                }
+            }
+
+        public:
             ULLBlock() : preBlock(nullptr), nxtBlock(nullptr), elementNum(0) {
-                elementData = new T *[BlockElementNumber];
-                memset(elementData, 0, sizeof(T *) * BlockElementNumber);
+                elementData = new T *[BLOCK_ELEMENT_NUMBER];
+                memset(elementData, 0, sizePtr * BLOCK_ELEMENT_NUMBER);
             }
 
             ULLBlock(const ULLBlock &other) : ULLBlock() {
@@ -43,16 +78,42 @@ namespace sjtu {
                 preBlock = nullptr;
                 nxtBlock = nullptr;
                 elementNum = other.elementNum;
-                memset(elementData, 0, sizeof(T *) * BlockElementNumber);
+                memset(elementData, 0, sizePtr * BLOCK_ELEMENT_NUMBER);
                 for (size_t i = 0; i < elementNum; ++i)
                     elementData[i] = new T(*(other.elementData[i]));
             }
 
-            T *blockHeadElement() { return elementData[0]; }
+            T *getElementPtr(size_t id) {
+                if (id >= elementNum) {
+                    if (nxtBlock == nullptr)throw index_out_of_bound();
+                    else return nxtBlock->getElementPtr(id - elementNum);
+                } else return elementData[id];
+            }
 
-            void insertElement(const T &arg) {}
 
-            void deleteElement(const T &arg) {}
+            void insertElement(const T &arg, size_t id) {
+                if (elementNum == BLOCK_ELEMENT_NUMBER)splitBlock();
+                if (id > elementNum) {
+                    if (nxtBlock == nullptr)throw index_out_of_bound();
+                    else nxtBlock->insertElement(arg, id - elementNum);
+                } else {
+                    for (size_t i = elementNum; i > id; --i)elementData[i] = elementData[i - 1];
+                    elementData[id] = new T(arg);
+                }
+            }
+
+            void deleteElement(const T &arg, size_t id) {
+                if (id >= elementNum) {
+                    if (nxtBlock == nullptr)throw index_out_of_bound();
+                    else nxtBlock->deleteElement(arg, id - elementNum);
+                } else {
+                    delete (elementData + id);
+                    for (size_t i = id; i < elementNum - 1; ++i)elementData[i] = elementData[i + 1];
+                    elementData[--elementNum] = nullptr;
+                    if (nxtBlock != nullptr && (elementNum + nxtBlock->elementNum < BLOCK_MERGE_BOUND))
+                        mergeBlock();
+                }
+            }
         };
 
         ULLBlock *headBlock, *tailBlock;
@@ -62,7 +123,7 @@ namespace sjtu {
 
         class iterator {
         private:
-            deque<T, BlockElementNumber, MergeBoundary> *subject;
+            deque<T, BLOCK_ELEMENT_NUMBER, BLOCK_MERGE_BOUND> *subject;
             size_t index;
         public:
             /**
@@ -72,7 +133,7 @@ namespace sjtu {
              */
             iterator() : subject(nullptr), index(0) {}
 
-            explicit iterator(deque<T, BlockElementNumber, MergeBoundary> *sub, const size_t &id) :
+            explicit iterator(deque<T, BLOCK_ELEMENT_NUMBER, BLOCK_MERGE_BOUND> *sub, const size_t &id) :
                     subject(sub), index(id) {}
 
 
@@ -169,22 +230,23 @@ namespace sjtu {
         };
 
 
-        deque() : headBlock(nullptr), tailBlock(nullptr) {}
+        deque() : totElementNumber(0), headBlock(nullptr), tailBlock(nullptr) {}
 
         deque(const deque &other) {
-            clear();
             if (other.headBlock != nullptr) {
-                ULLBlock *otherBlock = other.headBlock;
-                ULLBlock *newBlock = new ULLBlock;
-                headBlock = newBlock;
-                while (true) {
-                    *newBlock = *otherBlock;
-
+                headBlock = new ULLBlock(*(other.headBlock));
+                ULLBlock *thisPtr = headBlock, *otherPtr = other.headBlock;
+                while (otherPtr->nxtBlock != nullptr) {
+                    //todo finish here
                 }
+            } else {
+                totElementNumber = 0;
+                headBlock = nullptr;
+                tailBlock = nullptr;
             }
         }
 
-        ~deque() {}
+        ~deque() { clear(); }
 
 
         deque &operator=(const deque &other) {}
@@ -240,7 +302,18 @@ namespace sjtu {
         /**
          * clears the contents
          */
-        void clear() {}
+        void clear() {
+            ULLBlock *blockPtr = headBlock;
+            while (blockPtr->nxtBlock != nullptr) {
+                blockPtr = blockPtr->nxtBlock;
+                delete blockPtr->preBlock;
+            }
+            delete blockPtr;
+
+            totElementNumber = 0;
+            headBlock = nullptr;
+            tailBlock = nullptr;
+        }
 
         /**
          * inserts elements at the specified locat on in the container.

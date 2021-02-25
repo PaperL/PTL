@@ -19,12 +19,13 @@ namespace sjtu {
         size_t elementNum, memorySize; // 此处 memroySize 单位为 sizeof(T)
 
         inline void initMem() {
-            data = (T **) ::operator new(sizePtr * memorySize);
-            memset(data, 0, memorySize);
+            data = new T *[memorySize];
+            memset(data, 0, sizePtr * memorySize);
         }
 
         inline void delMem() {
-            for (size_t i = 0; i < memorySize; ++i)delete data[i];
+            for (size_t i = 0; i < elementNum; ++i)
+                delete data[i];
             delete[] data;
         }
 
@@ -83,9 +84,8 @@ namespace sjtu {
 
 
             iterator operator++(int) {
-                iterator tempIt(*this);
                 ++index;
-                return tempIt;
+                return (*this);
             }// iter++
 
             iterator &operator++() {
@@ -94,9 +94,8 @@ namespace sjtu {
             }// ++iter
 
             iterator operator--(int) {
-                iterator tempIt(*this);
                 --index;
-                return tempIt;
+                return (*this);
             }// iter--
 
             iterator &operator--() {
@@ -157,9 +156,8 @@ namespace sjtu {
 
 
             const_iterator operator++(int) {
-                const_iterator tempIt(*this);
                 ++index;
-                return tempIt;
+                return (*this);
             }// iter++
 
             const_iterator &operator++() {
@@ -168,9 +166,8 @@ namespace sjtu {
             }// ++iter
 
             const_iterator operator--(int) {
-                const_iterator tempIt(*this);
                 --index;
-                return tempIt;
+                return (*this);
             }// iter--
 
             const_iterator &operator--() {
@@ -279,8 +276,7 @@ namespace sjtu {
             if (elementNum == memorySize) {
                 T **originalData = data;
                 memorySize <<= 1;
-                data = (T **) ::operator new(sizePtr * memorySize);
-                memset(data, 0, memorySize);
+                initMem();
                 memcpy(data, originalData, sizePtr * elementNum);
                 delete[] originalData;
             }
@@ -306,13 +302,11 @@ namespace sjtu {
             if (elementNum == memorySize) {
                 T **originalData = data;
                 memorySize <<= 1;
-                data = (T **) ::operator new(sizePtr * memorySize);
-                memset(data, 0, memorySize);
+                initMem();
                 memcpy(data, originalData, sizePtr * elementNum);
                 delete[] originalData;
             }
-            data[elementNum] = new T(value);
-            ++elementNum;
+            data[elementNum++] = new T(value);
         }
 
 
@@ -320,9 +314,8 @@ namespace sjtu {
             if (elementNum == 0)throw container_is_empty();
                 //"Try to Pop Back Element from Empty Vector"
             else {
-                delete data[elementNum - 1];
-                data[elementNum - 1] = nullptr;
-                --elementNum;
+                delete data[--elementNum];
+                data[elementNum] = nullptr;
             }
         }
     };
