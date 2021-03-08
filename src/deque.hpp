@@ -127,10 +127,11 @@ namespace sjtu {
                 }
                 for (size_t i = elementNum; i > id; --i)elementData[i] = elementData[i - 1];
                 elementData[id] = new T(arg);
+                ++elementNum;
                 return iterator(this, id);
             }
 
-            iterator deleteElement(const T &arg, size_t id) {
+            iterator deleteElement(size_t id) {
                 /*if (id >= elementNum) {
                     if (nxtBlock == nullptr)throw index_out_of_bound();
                     else nxtBlock->deleteElement(arg, id - elementNum);
@@ -457,7 +458,7 @@ if ((n > 0 && n >= -index) || (n < 0 && -n > index))// n>0 处判断是否溢出
                 headBlock = nullptr;
                 return iterator(this, 0, false);
             } else {
-                iterator tempIt = pos.blockPtr->deleteElemnt(pos.indexInBlock);
+                iterator tempIt = pos.blockPtr->deleteElement(pos.indexInBlock);
                 tempIt.indexInDeque = pos.indexInDeque;
                 tempIt.subject = pos.subject;
                 return tempIt;
@@ -496,19 +497,23 @@ if ((n > 0 && n >= -index) || (n < 0 && -n > index))// n>0 处判断是否溢出
 #ifdef PAPERL_DEQUE_DEBUG
 
         void debugPrint() {
+            std::cout << "================begin" << std::endl;
             ULLBlock *_p = headBlock;
             std::cout << "num: " << totElementNumber << ", head: "
                       << headBlock << ", tail: " << tailBlock << std::endl << std::endl;
             while (_p != nullptr) {
-                std::cout << "nxt: " << _p->nxtBlock << ", pre: " << _p->preBlock << std::endl;
-                std::cout << "num: " << _p->elementNum;
+                std::cout << "nxt: " << _p->nxtBlock << ", pre: " << _p->preBlock << ", ";
+                std::cout << "num: " << _p->elementNum << std::endl;
                 for (int _i = 0; _i < BLOCK_ELEMENT_NUMBER; ++_i) {
-                    std::cout << *(_p->elementData[_i]) << "\t";
-                    if (_i % 5 == 0)std::cout << std::endl;
+                    if (_p->elementData[_i] == nullptr)
+                        std::cout << "NULL" << "\t";
+                    else std::cout << *(_p->elementData[_i]) << "\t";
+                    if (_i % 5 == 4)std::cout << std::endl;
                 }
                 std::cout << std::endl;
                 _p = _p->nxtBlock;
             }
+            std::cout << "==================end" << std::endl;
         }
 
 #endif

@@ -159,9 +159,30 @@ void dequeTest() {
     dq.push_front(2);
     dq.push_front(3);
     dq.debugPrint();
+    dq.pop_front();
+    dq.pop_front();
+    dq.debugPrint();
+    dq.push_back(4);
+    dq.debugPrint();
+    dq.push_back(5);
+    dq.push_back(6);
+    dq.debugPrint();
 }
 
 int main() {
+    /*
+    printf("\033[1mThis is RED.\n\033[0m");
+    printf("\033[2mThis is RED.\n\033[0m");
+    printf("\033[3mThis is RED.\n\033[0m");
+    printf("\033[4mThis is RED.\n\033[0m");
+    printf("\033[5mThis is RED.\n\033[0m");
+    printf("\033[6mThis is RED.\n\033[0m");
+    printf("\033[7mThis is RED.\n\033[0m");
+    printf("\033[8mThis is RED.\n\033[0m");
+    printf("\033[9mThis is RED.\n\033[0m");
+    printf("\033[31m\033[5AThis is NOT RED.\n\033[0m");
+    printf("\033[2J");
+    return 0;*/
     try {
         //vectorTest();
         //priority_queueTest();
