@@ -206,6 +206,7 @@ namespace sjtu {
             memorySize = other.memorySize;
             initMem();
             for (size_t i = 0; i < elementNum; ++i)data[i] = new T(*(other.data[i]));
+            return *this;
         }
 
 
@@ -292,8 +293,9 @@ namespace sjtu {
             if (id >= elementNum)throw index_out_of_bound();
             //"Try to Erase Element Out of Range of Vector"
             delete data[id];
-            for (size_t i = id; i < elementNum - 1; ++i)data[i] = data[i + 1];
             --elementNum;
+            for (size_t i = id; i < elementNum; ++i)data[i] = data[i + 1];
+            data[elementNum] = nullptr;
             return iterator(this, id);
         }
 

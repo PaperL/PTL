@@ -3,6 +3,7 @@
 #include "exceptions.hpp"
 #include "vector.hpp"
 #include "priority_queue.hpp"
+#include "deque.hpp"
 #include <string>
 
 using namespace sjtu;
@@ -151,10 +152,20 @@ void priority_queueTest() {
     std::cout << "===cp8===" << std::endl;
 }
 
+void dequeTest() {
+    deque<int, 5, 2> dq;
+    dq.debugPrint();
+    dq.push_front(1);
+    dq.push_front(2);
+    dq.push_front(3);
+    dq.debugPrint();
+}
+
 int main() {
     try {
         //vectorTest();
-        priority_queueTest();
+        //priority_queueTest();
+        dequeTest();
     }
     catch (sjtu::exception xept) {
         std::cout << xept.what() << std::endl;

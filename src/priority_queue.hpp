@@ -133,6 +133,7 @@ namespace sjtu {
             elementNum += other.elementNum;
 
             delete other.root;
+            other.root = nullptr;
             other.elementNum = 0;
         }
     };
