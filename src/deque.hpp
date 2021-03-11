@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <cstring> // memset
 
-#define PAPERL_DEQUE_DEBUG
+//#define PAPERL_DEQUE_DEBUG
 
 
 #ifdef PAPERL_DEQUE_DEBUG
@@ -38,31 +38,36 @@ namespace sjtu {
 
             void splitBlock() {
                 const size_t leftNum = BLOCK_ELEMENT_NUMBER / 2;
-                const size_t nxtNum = elementNum - BLOCK_ELEMENT_NUMBER / 2;
+                const size_t nxtNum = elementNum - leftNum;
                 ULLBlock *newBlock = new ULLBlock;
 
                 newBlock->preBlock = this;
                 newBlock->nxtBlock = nxtBlock;
                 newBlock->elementNum = nxtNum;
-                for (size_t i = leftNum; i < elementNum; ++i)
+                for (size_t i = leftNum; i < elementNum; ++i) {
                     newBlock->elementData[i - leftNum] = elementData[i];
+                }
 
                 if (nxtBlock != nullptr) nxtBlock->preBlock = newBlock;
                 nxtBlock = newBlock;
 
-                memset(elementData[leftNum], 0, sizePtr * nxtNum);
+                memset(elementData + leftNum, 0, sizePtr * nxtNum);
                 elementNum = leftNum;
             }
 
             void mergeBlock() {
-                for (size_t i = 0; i < nxtBlock->elementNum; ++i)
+                for (size_t i = 0; i < nxtBlock->elementNum; ++i) {
                     elementData[elementNum + i] = nxtBlock->elementData[i];
+                    nxtBlock->elementData[i] = nullptr;
+                }
                 elementNum += nxtBlock->elementNum;
-
-                nxtBlock = nxtBlock->nxtBlock;
-                if (nxtBlock != nullptr) {
+                if (nxtBlock->nxtBlock != nullptr) {
+                    nxtBlock = nxtBlock->nxtBlock;
                     delete nxtBlock->preBlock;
                     nxtBlock->preBlock = this;
+                } else {
+                    delete nxtBlock;
+                    nxtBlock = nullptr;
                 }
             }
 
@@ -114,7 +119,9 @@ namespace sjtu {
             }
 
 
-            iterator insertElement(const T &arg, size_t id) {
+            iterator insertElement(const T &arg, size_t id,
+                                   deque<T, BLOCK_ELEMENT_NUMBER, BLOCK_MERGE_BOUND> *sub,
+                                   size_t idInDeque, ULLBlock *&tbp) { // tail block ptr
                 /*if (id > elementNum) {
                     if (nxtBlock == nullptr)throw index_out_of_bound();
                     else nxtBlock->insertElement(arg, id - elementNum);
@@ -123,31 +130,44 @@ namespace sjtu {
                 // todo 需要真正实现迭代器的 invalid 功能
                 if (elementNum == BLOCK_ELEMENT_NUMBER) {
                     splitBlock();
-                    if (id > elementNum)return insertElement(arg, id - elementNum);
+                    if (nxtBlock->nxtBlock == nullptr) tbp = nxtBlock;
+                    if (id > elementNum)
+                        return nxtBlock->insertElement(arg, id - elementNum,
+                                                       sub, idInDeque, tbp);
                 }
                 for (size_t i = elementNum; i > id; --i)elementData[i] = elementData[i - 1];
                 elementData[id] = new T(arg);
                 ++elementNum;
-                return iterator(this, id);
+                return iterator(sub, this, idInDeque, id);
             }
 
-            iterator deleteElement(size_t id) {
+            iterator deleteElement(size_t id,
+                                   deque<T, BLOCK_ELEMENT_NUMBER, BLOCK_MERGE_BOUND> *sub,
+                                   size_t idInDeque, ULLBlock *&tbp) {
                 /*if (id >= elementNum) {
                     if (nxtBlock == nullptr)throw index_out_of_bound();
                     else nxtBlock->deleteElement(arg, id - elementNum);
                 } else {*/
                 if (id >= elementNum)throw index_out_of_bound();
-                delete (elementData + id);
+                delete elementData[id];
                 --elementNum;
                 for (size_t i = id; i < elementNum; ++i)elementData[i] = elementData[i + 1];
                 elementData[elementNum] = nullptr;
-                if (nxtBlock != nullptr && (elementNum + nxtBlock->elementNum < BLOCK_MERGE_BOUND))
+                if (nxtBlock != nullptr &&
+                    (elementNum == 0 || elementNum + nxtBlock->elementNum < BLOCK_MERGE_BOUND)) {
+                    if (nxtBlock == tbp)tbp = this;
                     mergeBlock();
-                return iterator(this, id);
+                }
+                if (id != 0 && id == elementNum) { // 特判(首)块末/删至空块
+                    if (this->nxtBlock != nullptr)
+                        return iterator(sub, this->nxtBlock, idInDeque, 0);
+                }
+                return iterator(sub, this, idInDeque, id);
             }
         };
 
         ULLBlock *headBlock, *tailBlock;
+
 
     public:
         class const_iterator;
@@ -161,7 +181,7 @@ namespace sjtu {
             ULLBlock *blockPtr;
             size_t indexInBlock;
         public:
-            iterator() : subject(nullptr), blockPtr(subject->headBlock), indexInDeque(0), indexInBlock(0) {}
+            iterator() : subject(nullptr), blockPtr(nullptr), indexInDeque(0), indexInBlock(0) {}
 
             explicit iterator(deque<T, BLOCK_ELEMENT_NUMBER, BLOCK_MERGE_BOUND> *sub,
                               const size_t &id, bool tailConstruct = false) :
@@ -169,11 +189,13 @@ namespace sjtu {
                 if (tailConstruct) {
                     indexInDeque = subject->totElementNumber;
                     blockPtr = subject->tailBlock;
-                    indexInBlock = blockPtr->elementNum;
+                    indexInBlock = (blockPtr != nullptr) ? (blockPtr->elementNum) : 0;
                 } else {
-                    while (blockPtr != nullptr && indexInBlock >= blockPtr->elementNum) {
-                        indexInBlock -= blockPtr->elementNum;
-                        blockPtr = blockPtr->nxtBlock;
+                    if (blockPtr != nullptr) {
+                        while (blockPtr->nxtBlock != nullptr && indexInBlock >= blockPtr->elementNum) {
+                            indexInBlock -= blockPtr->elementNum;
+                            blockPtr = blockPtr->nxtBlock;
+                        }
                     }
                 }
             }
@@ -183,7 +205,7 @@ namespace sjtu {
                     indexInDeque(it.indexInDeque + offset), indexInBlock(it.indexInBlock) {
                 if (offset > 0) {
                     indexInBlock += offset;
-                    while (indexInBlock >= blockPtr->elementNum) {
+                    while (blockPtr->nxtBlock != nullptr && indexInBlock >= blockPtr->elementNum) {
                         indexInBlock = indexInBlock - blockPtr->elementNum;
                         blockPtr = blockPtr->nxtBlock;
                     }
@@ -192,17 +214,20 @@ namespace sjtu {
                     if (offset > indexInBlock) {
                         offset -= indexInBlock + 1;
                         blockPtr = blockPtr->preBlock;
+                        if (blockPtr == nullptr) throw invalid_iterator();
                         while (offset >= blockPtr->elementNum) {
                             offset -= blockPtr->elementNum;
                             blockPtr = blockPtr->preBlock;
+                            if (blockPtr == nullptr) throw invalid_iterator();
                         }
-                        indexInBlock = blockPtr->elementNum - offset - 1;
-                    }
+                        indexInBlock = blockPtr->elementNum - 1 - offset;
+                    } else indexInBlock -= offset;
                 }
             }
 
-            explicit iterator(ULLBlock *blockP, size_t id) :
-                    subject(nullptr), blockPtr(blockP), indexInDeque(0), indexInBlock(id) {}
+            explicit iterator(deque<T, BLOCK_ELEMENT_NUMBER, BLOCK_MERGE_BOUND> *sub,
+                              ULLBlock *blockP, size_t idInDeque, size_t idInBlock) :
+                    subject(sub), blockPtr(blockP), indexInDeque(idInDeque), indexInBlock(idInBlock) {}
 
             /*无符号类型与有符号类型变量同时出现在运算中时默认转为无符号
 if ((n > 0 && n >= -index) || (n < 0 && -n > index))// n>0 处判断是否溢出size_t范围
@@ -262,9 +287,9 @@ if ((n > 0 && n >= -index) || (n < 0 && -n > index))// n>0 处判断是否溢出
              * 		throw if iterator is invalid
              */
             T &operator*() const {
-                if (indexInBlock < 0 || indexInBlock >= blockPtr->elementNum)
+                if (indexInBlock >= blockPtr->elementNum) {
                     throw invalid_iterator();
-                else return *(blockPtr->getElementPtr(indexInBlock));
+                } else return *(blockPtr->getElementPtr(indexInBlock));
             }
 
             /**
@@ -293,27 +318,122 @@ if ((n > 0 && n >= -index) || (n < 0 && -n > index))// n>0 处判断是否溢出
         };
 
         class const_iterator {
-            // it should has similar member method as iterator.
-            //  and it should be able to construct from an iterator.
+            friend class deque;
+
         private:
-            // data members.
+            const deque<T, BLOCK_ELEMENT_NUMBER, BLOCK_MERGE_BOUND> *subject;
+            size_t indexInDeque;
+            ULLBlock *blockPtr;
+            size_t indexInBlock;
         public:
-            const_iterator() {
-                // TODO
+            const_iterator() : subject(nullptr), blockPtr(nullptr), indexInDeque(0), indexInBlock(0) {}
+
+            explicit const_iterator(const deque<T, BLOCK_ELEMENT_NUMBER, BLOCK_MERGE_BOUND> *sub,
+                                    const size_t &id, bool tailConstruct = false) :
+                    subject(sub), blockPtr(subject->headBlock), indexInDeque(id), indexInBlock(id) {
+                if (tailConstruct) {
+                    indexInDeque = subject->totElementNumber;
+                    blockPtr = subject->tailBlock;
+                    indexInBlock = (blockPtr != nullptr) ? (blockPtr->elementNum) : 0;
+                } else {
+                    if (blockPtr != nullptr) {
+                        while (blockPtr->nxtBlock != nullptr && indexInBlock >= blockPtr->elementNum) {
+                            indexInBlock -= blockPtr->elementNum;
+                            blockPtr = blockPtr->nxtBlock;
+                        }
+                    }
+                }
             }
 
-            const_iterator(const const_iterator &other) {
-                // TODO
+            explicit const_iterator(const const_iterator &it, int offset) :
+                    subject(it.subject), blockPtr(it.blockPtr),
+                    indexInDeque(it.indexInDeque + offset), indexInBlock(it.indexInBlock) {
+                if (offset > 0) {
+                    indexInBlock += offset;
+                    while (blockPtr->nxtBlock != nullptr && indexInBlock >= blockPtr->elementNum) {
+                        indexInBlock = indexInBlock - blockPtr->elementNum;
+                        blockPtr = blockPtr->nxtBlock;
+                    }
+                } else if (offset < 0) {
+                    offset = -offset;
+                    if (offset > indexInBlock) {
+                        offset -= indexInBlock + 1;
+                        blockPtr = blockPtr->preBlock;
+                        if (blockPtr == nullptr) throw invalid_iterator();
+                        while (offset >= blockPtr->elementNum) {
+                            offset -= blockPtr->elementNum;
+                            blockPtr = blockPtr->preBlock;
+                        }
+                        indexInBlock = blockPtr->elementNum - offset - 1;
+                    } else indexInBlock -= offset;
+                }
             }
 
-            const_iterator(const iterator &other) {
-                // TODO
+            explicit const_iterator(deque<T, BLOCK_ELEMENT_NUMBER, BLOCK_MERGE_BOUND> *sub,
+                                    ULLBlock *blockP, size_t idInDeque, size_t idInBlock) :
+                    subject(sub), blockPtr(blockP), indexInDeque(idInDeque), indexInBlock(idInBlock) {}
+
+            const_iterator operator+(const int &n) const { return const_iterator(*this, n); }
+
+            const_iterator operator-(const int &n) const { return const_iterator(*this, -n); }
+
+            int operator-(const const_iterator &rhs) const {
+                if (subject != rhs.subject)throw invalid_iterator();
+                return int(indexInDeque - rhs.indexInDeque);
             }
-            // And other methods in iterator.
-            // And other methods in iterator.
-            // And other methods in iterator.
+
+            const_iterator &operator+=(const int &n) {
+                *this = const_iterator(*this, n);
+                return *this;
+            }
+
+            const_iterator &operator-=(const int &n) {
+                *this = const_iterator(*this, -n);
+                return *this;
+            }
+
+            const_iterator operator++(int) {
+                const_iterator tempIt(*this);
+                *this = const_iterator(*this, 1);
+                return tempIt;
+            }// iter++
+
+            const_iterator &operator++() {
+                *this = const_iterator(*this, 1);
+                return *this;
+            }// ++iter
+
+            const_iterator operator--(int) {
+                const_iterator tempIt(*this);
+                *this = const_iterator(*this, -1);
+                return tempIt;
+            }// iter--
+
+            const_iterator &operator--() {
+                *this = const_iterator(*this, -1);
+                return *this;
+            }// --iter
+
+            const T &operator*() const {
+                if (indexInBlock >= blockPtr->elementNum)
+                    throw invalid_iterator();
+                else return *(blockPtr->getElementPtr(indexInBlock));
+            }
+
+            const T *operator->() const noexcept { return &(operator*()); }
+
+            bool operator==(const iterator &rhs) const {
+                return (indexInDeque == rhs.indexInDeque && subject == rhs.subject);
+            }
+
+            bool operator==(const const_iterator &rhs) const {
+                return (indexInDeque == rhs.indexInDeque && subject == rhs.subject);
+            }
+
+            bool operator!=(const iterator &rhs) const { return !(*this == rhs); }
+
+            bool operator!=(const const_iterator &rhs) const { return !(*this == rhs); }
         };
-
 
         deque() : totElementNumber(0), headBlock(nullptr), tailBlock(nullptr) {}
 
@@ -324,7 +444,7 @@ if ((n > 0 && n >= -index) || (n < 0 && -n > index))// n>0 处判断是否溢出
                 while (otherPtr->nxtBlock != nullptr) {
                     otherPtr = otherPtr->nxtBlock;
                     thisPtr->nxtBlock = new ULLBlock(*otherPtr);
-                    thisPtr->nxtBlock->prePtr = thisPtr;
+                    thisPtr->nxtBlock->preBlock = thisPtr;
                     thisPtr = thisPtr->nxtBlock;
                 }
                 tailBlock = thisPtr;
@@ -340,13 +460,14 @@ if ((n > 0 && n >= -index) || (n < 0 && -n > index))// n>0 处判断是否溢出
         deque &operator=(const deque &other) {
             if (this == &other)return *this;
             clear();
+            totElementNumber = other.totElementNumber;
             if (other.headBlock != nullptr) {
                 headBlock = new ULLBlock(*(other.headBlock));
                 ULLBlock *thisPtr = headBlock, *otherPtr = other.headBlock;
                 while (otherPtr->nxtBlock != nullptr) {
                     otherPtr = otherPtr->nxtBlock;
                     thisPtr->nxtBlock = new ULLBlock(*otherPtr);
-                    thisPtr->nxtBlock->prePtr = thisPtr;
+                    thisPtr->nxtBlock->preBlock = thisPtr;
                     thisPtr = thisPtr->nxtBlock;
                 }
                 tailBlock = thisPtr;
@@ -363,11 +484,14 @@ if ((n > 0 && n >= -index) || (n < 0 && -n > index))// n>0 处判断是否溢出
             else return *(headBlock->getElementPtr(pos));
         }
 
-        const T &at(const size_t &pos) const { return at(pos); }
+        const T &at(const size_t &pos) const {
+            if (totElementNumber == 0)throw index_out_of_bound();
+            else return *(headBlock->getElementPtr(pos));
+        }
 
         T &operator[](const size_t &pos) { return *(headBlock->getElementPtr(pos)); }
 
-        const T &operator[](const size_t &pos) const { return operator[](pos); }
+        const T &operator[](const size_t &pos) const { return *(headBlock->getElementPtr(pos)); }
 
 
         const T &front() const {
@@ -385,14 +509,14 @@ if ((n > 0 && n >= -index) || (n < 0 && -n > index))// n>0 处判断是否溢出
          */
         iterator begin() { return iterator(this, 0); }
 
-        const_iterator cbegin() const {}
+        const_iterator cbegin() const { return const_iterator(this, 0); }
 
         /**
          * returns an iterator to the end.
          */
         iterator end() { return iterator(this, 0, true); }
 
-        const_iterator cend() const {}
+        const_iterator cend() const { return const_iterator(this, 0, true); }
 
         /**
          * checks whether the container is empty.
@@ -429,19 +553,19 @@ if ((n > 0 && n >= -index) || (n < 0 && -n > index))// n>0 处判断是否溢出
          *     throw if the iterator is invalid or it point to a wrong place.
          */
         iterator insert(iterator pos, const T &value) {
+            //std::cout << "insert: " << pos.indexInDeque << ", " << pos.indexInBlock << ", "
+            //          << pos.blockPtr << std::endl;
+            if (this != pos.subject)throw invalid_iterator();
             if (totElementNumber++ == 0) {
-                headBlock = new ULLBlock;
-                std::cout << pos.indexInBlock << ", " << pos.indexInDeque << std::endl;
+                headBlock = new ULLBlock; // headBlock 仅在首块生成/消亡时变动
+                tailBlock = headBlock;
                 if (pos.indexInDeque != 0)throw index_out_of_bound();
-                headBlock->insertElement(value, 0);
-                std::cout << "cp2" << std::endl;
+                headBlock->insertElement(value, 0,
+                                         this, pos.indexInDeque, tailBlock);
                 return iterator(this, 0, false);
-            } else {
-                iterator tempIt = pos.blockPtr->insertElement(value, pos.indexInBlock);
-                tempIt.indexInDeque = pos.indexInDeque;
-                tempIt.subject = pos.subject;
-                return tempIt;
-            }
+            } else
+                return pos.blockPtr->insertElement(value, pos.indexInBlock,
+                                                   pos.subject, pos.indexInDeque, tailBlock);
         }
 
         /**
@@ -452,46 +576,37 @@ if ((n > 0 && n >= -index) || (n < 0 && -n > index))// n>0 处判断是否溢出
          */
         iterator erase(iterator pos) {
             if (totElementNumber == 0)throw container_is_empty();
-            if (totElementNumber-- == 1) {
-                if (pos.indexInDeque != 0)throw index_out_of_bound();
-                delete headBlock;
-                headBlock = nullptr;
-                return iterator(this, 0, false);
-            } else {
-                iterator tempIt = pos.blockPtr->deleteElement(pos.indexInBlock);
-                tempIt.indexInDeque = pos.indexInDeque;
-                tempIt.subject = pos.subject;
-                return tempIt;
+            //std::cout << "erase: " << pos.indexInDeque << ", " << pos.indexInBlock << ", "
+            //          << pos.blockPtr << std::endl;
+            iterator tempIt = pos.blockPtr->deleteElement(pos.indexInBlock,
+                                                          pos.subject, pos.indexInDeque, tailBlock);
+            if (tempIt.blockPtr->elementNum == 0) {
+                if (tempIt.blockPtr->preBlock != nullptr) {// 删除末块
+                    tempIt.blockPtr = tempIt.blockPtr->preBlock;
+                    delete tempIt.blockPtr->nxtBlock;
+                    tempIt.blockPtr->nxtBlock = nullptr;
+                    tailBlock = tempIt.blockPtr;
+                    tempIt.indexInBlock = tempIt.blockPtr->elementNum - 1;
+                } else {
+                    headBlock = nullptr;
+                    tailBlock = nullptr;
+                    delete tempIt.blockPtr;
+                    tempIt = iterator(pos.subject, nullptr, 0, 0);
+                }
             }
+            --totElementNumber;
+            return tempIt;
         }
 
-        /**
-         * adds an element to the end
-         */
-        void push_back(const T &value) { insert(--end(), value); }
+        void push_back(const T &value) { insert(end(), value); }
 
-        /**
-         * removes the last element
-         *     throw when the container is empty.
-         */
         void pop_back() {
-            if (totElementNumber == 0)throw container_is_empty();
-            erase(--end());
+            if (totElementNumber == 0)throw container_is_empty(); // --end()会出错
+            else erase(--end());
         }
 
-        /**
-         * inserts an element to the beginning.
-         */
-        void push_front(const T &value) {
-            std::cout << "cpPF1" << std::endl;
-            insert(begin(), value);
-            std::cout << "cpPF2" << std::endl;
-        }
+        void push_front(const T &value) { insert(begin(), value); }
 
-        /**
-         * removes the first element.
-         *     throw when the container is empty.
-         */
         void pop_front() { erase(begin()); }
 
 #ifdef PAPERL_DEQUE_DEBUG
@@ -502,18 +617,18 @@ if ((n > 0 && n >= -index) || (n < 0 && -n > index))// n>0 处判断是否溢出
             std::cout << "num: " << totElementNumber << ", head: "
                       << headBlock << ", tail: " << tailBlock << std::endl << std::endl;
             while (_p != nullptr) {
-                std::cout << "nxt: " << _p->nxtBlock << ", pre: " << _p->preBlock << ", ";
-                std::cout << "num: " << _p->elementNum << std::endl;
+                std::cout << "=== num: " << _p->elementNum << ", address: " << _p << std::endl;
+                std::cout << "nxt: " << _p->nxtBlock << ", pre: " << _p->preBlock << std::endl;
                 for (int _i = 0; _i < BLOCK_ELEMENT_NUMBER; ++_i) {
                     if (_p->elementData[_i] == nullptr)
                         std::cout << "NULL" << "\t";
                     else std::cout << *(_p->elementData[_i]) << "\t";
                     if (_i % 5 == 4)std::cout << std::endl;
                 }
-                std::cout << std::endl;
                 _p = _p->nxtBlock;
             }
-            std::cout << "==================end" << std::endl;
+            std::cout << "------------------end" << std::endl;
+            std::cout << std::endl;
         }
 
 #endif

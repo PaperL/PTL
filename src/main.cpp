@@ -154,18 +154,31 @@ void priority_queueTest() {
 
 void dequeTest() {
     deque<int, 5, 2> dq;
+    for (int i = 0; i < 10; ++i)dq.push_back(i);
     dq.debugPrint();
-    dq.push_front(1);
-    dq.push_front(2);
-    dq.push_front(3);
+    auto it = dq.end();
+    --it;
+    std::cout << *it << std::endl;
+    it = dq.erase(it);
     dq.debugPrint();
-    dq.pop_front();
-    dq.pop_front();
+    std::cout << *it << std::endl;
+    it = dq.erase(it);
     dq.debugPrint();
-    dq.push_back(4);
+    std::cout << *it << std::endl;
+    it = dq.erase(it);
+    std::cout << *it << std::endl;
     dq.debugPrint();
-    dq.push_back(5);
-    dq.push_back(6);
+    it = dq.erase(it);
+    std::cout << *it << std::endl;
+    dq.debugPrint();
+    it = dq.erase(it);
+    std::cout << *it << std::endl;
+    dq.debugPrint();
+    it = dq.erase(it);
+    std::cout << *it << std::endl;
+    dq.debugPrint();
+    it = dq.erase(it);
+    std::cout << *it << std::endl;
     dq.debugPrint();
 }
 
