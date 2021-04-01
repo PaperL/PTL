@@ -1,10 +1,13 @@
 #include <iostream>
+#include <string>
 
 #include "exceptions.hpp"
+
 #include "vector.hpp"
 #include "priority_queue.hpp"
 #include "deque.hpp"
-#include <string>
+
+#include "PTF.hpp"
 
 using namespace sjtu;
 
@@ -151,7 +154,7 @@ void priority_queueTest() {
     std::cout << std::endl;
     std::cout << "===cp8===" << std::endl;
 }
-
+/*
 void dequeTest() {
     deque<int, 5, 2> dq;
     for (int i = 0; i < 10; ++i)dq.push_back(i);
@@ -181,7 +184,7 @@ void dequeTest() {
     std::cout << *it << std::endl;
     dq.debugPrint();
 }
-
+*/
 int main() {
     /*
     printf("\033[1mThis is RED.\n\033[0m");
@@ -196,6 +199,7 @@ int main() {
     printf("\033[31m\033[5AThis is NOT RED.\n\033[0m");
     printf("\033[2J");
     return 0;*/
+    /*
     try {
         //vectorTest();
         //priority_queueTest();
@@ -203,6 +207,10 @@ int main() {
     }
     catch (sjtu::exception xept) {
         std::cout << xept.what() << std::endl;
-    }
+    }*/
+    int a;
+    char b;
+    PTF::qRead(a,b);
+    PTF::qWrite(',',a,b);
     return 0;
 }
