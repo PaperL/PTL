@@ -6,6 +6,7 @@
 #include "vector.hpp"
 #include "priority_queue.hpp"
 #include "deque.hpp"
+#include "segment_tree.hpp"
 
 #include "PTF.hpp"
 
