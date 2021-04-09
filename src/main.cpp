@@ -7,10 +7,13 @@
 #include "priority_queue.hpp"
 #include "deque.hpp"
 #include "segment_tree.hpp"
+#include "map.hpp"
 
 #include "PTF.hpp"
 
 using namespace sjtu;
+using namespace PTF;
+using namespace PTL;
 
 void vectorTest() {
 
@@ -155,6 +158,7 @@ void priority_queueTest() {
     std::cout << std::endl;
     std::cout << "===cp8===" << std::endl;
 }
+
 /*
 void dequeTest() {
     deque<int, 5, 2> dq;
@@ -186,6 +190,27 @@ void dequeTest() {
     dq.debugPrint();
 }
 */
+
+void segment_treeTest(){
+    int a[7];
+    for (int i = 0; i < 7; ++i)
+        a[i] = i + 1;
+    //std::cin >> item;
+    segment_tree<int> tree(7, a);
+    for(int i=0;i<7;++i)
+        std::cout << tree.query(i, i+1) << ", ";
+    std::cout << std::endl;
+    tree.update(1, -5);
+    tree.update(3,6,3);
+    for(int i=0;i<7;++i)
+        std::cout << tree.query(i, i+1) << ", ";
+    std::cout << std::endl;
+}
+
+void mapTest(){
+
+}
+
 int main() {
     /*
     printf("\033[1mThis is RED.\n\033[0m");
@@ -200,18 +225,14 @@ int main() {
     printf("\033[31m\033[5AThis is NOT RED.\n\033[0m");
     printf("\033[2J");
     return 0;*/
-    /*
     try {
         //vectorTest();
         //priority_queueTest();
-        dequeTest();
+        //dequeTest();
+        mapTest();
     }
     catch (sjtu::exception xept) {
         std::cout << xept.what() << std::endl;
-    }*/
-    int a;
-    char b;
-    PTF::qRead(a,b);
-    PTF::qWrite(',',a,b);
+    }
     return 0;
 }
