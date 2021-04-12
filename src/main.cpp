@@ -7,7 +7,7 @@
 #include "priority_queue.hpp"
 #include "deque.hpp"
 #include "segment_tree.hpp"
-#include "map.hpp"
+// #include "map.hpp"
 
 #include "PTF.hpp"
 
@@ -191,23 +191,23 @@ void dequeTest() {
 }
 */
 
-void segment_treeTest(){
+void segment_treeTest() {
     int a[7];
     for (int i = 0; i < 7; ++i)
         a[i] = i + 1;
     //std::cin >> item;
     segment_tree<int> tree(7, a);
-    for(int i=0;i<7;++i)
-        std::cout << tree.query(i, i+1) << ", ";
+    for (int i = 0; i < 7; ++i)
+        std::cout << tree.query(i, i + 1) << ", ";
     std::cout << std::endl;
     tree.update(1, -5);
-    tree.update(3,6,3);
-    for(int i=0;i<7;++i)
-        std::cout << tree.query(i, i+1) << ", ";
+    tree.update(3, 6, 3);
+    for (int i = 0; i < 7; ++i)
+        std::cout << tree.query(i, i + 1) << ", ";
     std::cout << std::endl;
 }
 
-void mapTest(){
+void mapTest() {
 
 }
 
@@ -225,6 +225,7 @@ int main() {
     printf("\033[31m\033[5AThis is NOT RED.\n\033[0m");
     printf("\033[2J");
     return 0;*/
+    /*
     try {
         //vectorTest();
         //priority_queueTest();
@@ -233,6 +234,10 @@ int main() {
     }
     catch (sjtu::exception xept) {
         std::cout << xept.what() << std::endl;
-    }
+    }*/
+    char a = '=';
+    int b = 123;
+    unsigned long long int c = 987;
+    qWrite<' '>(a, b, c);
     return 0;
 }

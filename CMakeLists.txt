@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(PTL)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 include_directories(
         ${PROJECT_SOURCE_DIR}/src/
@@ -12,6 +12,6 @@ set(src_dir
         # ${PROJECT_SOURCE_DIR}/src/vector.hpp
         # ${PROJECT_SOURCE_DIR}/src/priority_queue.hpp
         # ${PROJECT_SOURCE_DIR}/src/deque.hpp
-        ${PROJECT_SOURCE_DIR}/src/map.hpp
+        # ${PROJECT_SOURCE_DIR}/src/map.hpp
 )
-add_executable(code ${src_dir} src/test.cpp)
+add_executable(code ${src_dir} src/main.cpp)
