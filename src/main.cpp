@@ -235,9 +235,16 @@ int main() {
     catch (sjtu::exception xept) {
         std::cout << xept.what() << std::endl;
     }*/
-    char a = '=';
-    int b = 123;
-    unsigned long long int c = 987;
-    qWrite<' '>(a, b, c);
+    int a = 1;
+    char b = 'z';
+    size_t c = 123;
+    qWrite(a, b);
+    putchar(10);
+    qWriteS('-', a, b, c, b, a);
+    putchar(10);
+    qWriteL('.', c, a);
+    putchar(10);
+    qWriteSL(", ", '=', a, b, c);
+    // qWrite<", ">(a, b, c);
     return 0;
 }
