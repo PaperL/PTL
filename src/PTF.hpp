@@ -3,25 +3,30 @@
 #define PTL_PTF_H
 
 #include <cstdio>
-#include <exception>
+#include <cassert>
+#include <stdexcept>
+#include <type_traits>
 
 namespace PTF {
 #pragma region PTF_DESCRIPTION
 /*
  * "PaperL's Template Function"
  *
- * Version: 1.01
+ * Version: 1.1
  * Last Update Time: 2021.4.13
  * Last Update Content:
- *      修正 qRead 读到意外 EOF 导致死循环的问题, 返回 std::ios_base::failure
+ *      修改: qRead 返回 <stdexcept> 库 std::runtime_error
+ *      IO 函数支持字符(串)
  * Going to develop:
- *      IO 函数支持浮点, qRead 函数支持字符
+ *      IO 函数支持浮点
  *      增加 PTF_ALGORITHM
- *
+ *      增加 PTF_MATH 三角函数、快速幂等计算函数
  */
 #pragma endregion PTF_DESCRIPTION
 
 #pragma region PTF_TYPE
+
+    // std::is_same_v<T1,T2>
 
     template<typename T1, typename T2>
     struct sameTypeJudge {
@@ -80,24 +85,51 @@ namespace PTF {
 #pragma endregion PTF_MATH
 
 #pragma region PTF_IO
-//  注意 qRead 及相关函数仅支持 整形
-//  注意 qWrite 及相关函数仅支持 字符/整形
 
-    inline void qRead(auto &_k) {
-        int _c = getchar();
-        bool _sign = false;
-        _k = 0;
-        while (_c < '0' || _c > '9') {
-            if (_c < 0 || _c > 255)
-                throw std::ios_base::failure("In PTF: qRead get unexpected character (may be EOF)\n");
-            if (_c == '-') _sign = true;
-            _c = getchar();
+    template<typename T>
+    inline void qRead(T &_k) {
+        static_assert(!std::is_const_v<T>,
+                      "In PTF: qRead get unexpected const argument");
+        if constexpr(sameType<T, char>) _k = getchar();
+        else if constexpr (sameType<T, char *>) {
+            size_t _p = 0;
+            int _c = getchar();
+            while (_c == ' ' || _c == '\n' || _c == '\r') {
+                if (_c < 0 || _c > 255)
+                    throw std::runtime_error("In PTF: qRead get unexpected character (may be EOF)\n");
+                _c = getchar();
+            }
+            _k[0] = _c;
+            while (_k[_p] != ' ' && _k[_p] != '\n' && _k[_p] != '\r' && _k[_p] != '\0')
+                _k[++_p] = getchar();
+            _k[_p] = '\0';
         }
-        while (_c >= '0' && _c <= '9') {
-            _k = _k * 10 - 48 + _c; // 此处位运算替代 *10 可能不一定更快
-            _c = getchar();
+        else if constexpr (sameType<std::remove_extent_t<T>, char>) {
+            size_t _p = 0;
+            const size_t _l = std::extent_v<T>;
+            _k[_p] = getchar();
+            while (_k[_p] != ' ' && _k[_p] != '\n' && _k[_p] != '\r' && _k[_p] != '\0' && _p < _l)
+                _k[++_p] = getchar();
+            _k[_p] = '\0';
         }
-        if (_sign) _k = -_k;
+        else if constexpr(std::is_integral_v<T>) {
+            int _c = getchar();
+            bool _sign = false;
+            _k = 0;
+            while (_c < '0' || _c > '9') {
+                if (_c < 0 || _c > 255)
+                    throw std::runtime_error("In PTF: qRead get unexpected character (may be EOF)\n");
+                if (_c == '-') _sign = true;
+                _c = getchar();
+            }
+            while (_c >= '0' && _c <= '9') {
+                _k = _k * 10 - 48 + _c; // 此处位运算替代 *10 可能不一定更快
+                _c = getchar();
+            }
+            if (_sign) _k = -_k;
+        }
+        else static_assert(sameType<T, std::remove_cvref<T>[1]>,
+                           "In PTF: qRead get argument of unexpected type\n");
     }
 
     template<typename T>
@@ -111,16 +143,28 @@ namespace PTF {
     inline void qRead(auto &... _argList) { (qRead(_argList), ...); }
 
     template<typename T>
-    inline void qWrite(T _k) {
-        if constexpr(sameType<T, char> || sameType<T, const char>) putchar(_k);
-        else if constexpr(sameType<T, const char *> || sameType<T, char *>) printf("%s", _k);
-        else if (_k != 0) {
-            int _p = 0;
-            char _c[24];
-            if (_k < 0)putchar('-'), _k = -_k;
-            while (_k) _c[_p++] = _k % 10 + 48, _k /= 10;
-            while (_p--)putchar(_c[_p]);
-        } else putchar('0');
+    inline void qWrite(const T &_k) {
+        if constexpr(sameType<std::remove_const_t<T>, char>) putchar(_k);
+        else if constexpr (sameType<std::remove_const_t<T>, char *>) {
+            size_t _p = 0;
+            while (_k[_p] != '\0') putchar(_k[_p++]);
+        }
+        else if constexpr (sameType<std::remove_extent_t<T>, char>) {
+            size_t _p = 0;
+            const size_t _l = std::extent_v<T>;
+            while (_k[_p] != '\0' && _p < _l) putchar(_k[_p++]);
+        }
+        else if constexpr (std::is_integral_v<T>) {
+            size_t _p = 0;
+            T _ck(_k);
+            char _c[32];
+            if constexpr (std::is_signed_v<T>)
+                if (_ck < 0) putchar('-'), _ck = -_ck;
+            while (_ck) _c[_p++] = _ck % 10 + 48, _ck /= 10;
+            while (_p--) putchar(_c[_p]);
+        }
+        else static_assert(sameType<T, std::remove_cvref<T>[1]>,
+                           "In PTF: qWrite get argument of unexpected type\n");
     }
 
     inline void qWrite(auto ... _argList) { (qWrite(_argList), ...); }

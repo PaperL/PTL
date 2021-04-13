@@ -235,7 +235,24 @@ int main() {
     catch (sjtu::exception xept) {
         std::cout << xept.what() << std::endl;
     }*/
-    int k;
-    qRead(k);
+    int k1 = 1;
+    long int k2 = 1;
+    long long int k3;
+    char c;
+    char *s1 = new char[10], s2[10];
+    qRead(k1, k2, k3, c, s1, s2);
+    qWrite("===============\n");
+    qWriteSL('-', '.', k1, k2, k3, c, s1, s2);
+    /*
+    qWrite(k1);
+    qWrite(k2);
+    qWrite(k3);
+    qWrite(c);
+    qWrite(c2);
+    qWrite(s1);
+    qWrite(s2);
+    qWrite(s3);
+    qWrite(s4);
+*/
     return 0;
 }
