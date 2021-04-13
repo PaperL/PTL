@@ -6,18 +6,20 @@
 #include <cassert>
 #include <stdexcept>
 #include <type_traits>
+#include <iostream>
 
 namespace PTF {
 #pragma region PTF_DESCRIPTION
 /*
  * "PaperL's Template Function"
  *
- * Version: 1.1
+ * Version: 1.15
  * Last Update Time: 2021.4.13
  * Last Update Content:
- *      修改: qRead 返回 <stdexcept> 库 std::runtime_error
- *      IO 函数支持字符(串)
+ *      重置 setT 函数
+ *      正在研究如何让函数支持修改右值(&&)
  * Going to develop:
+ *      让同一函数同时支持数组和指针
  *      IO 函数支持浮点
  *      增加 PTF_ALGORITHM
  *      增加 PTF_MATH 三角函数、快速幂等计算函数
@@ -53,9 +55,18 @@ namespace PTF {
     }
 
     template<typename T>
-    inline void setT(T _array[], const T &_value, size_t _n) {
-        for (size_t _p = 0; _p < _n; _p++)
-            _array[_p] = _value;
+    inline void setT(T &_array, const auto &_value, size_t _n = 0) {
+        static_assert(std::is_array_v<T> || std::is_pointer_v<T>,
+                      "In PTF: setT get first argument of not array type");
+        static_assert(sameType<std::remove_cvref_t<decltype(_value)>, std::remove_all_extents_t<T>> ||
+                      sameType<std::remove_cvref_t<decltype(_value)>, std::remove_pointer_t<T>>,
+                      "In PTF: setT get array and value of different type");
+        if constexpr (std::is_array_v<T>)
+            for (auto &_item:_array)_item = _value;
+        else if constexpr (std::is_pointer_v<T>) {
+            for (size_t _p = 0; _p < _n; _p++)
+                _array[_p] = _value;
+        }
     }
 
 #pragma endregion PTF_MEMORY

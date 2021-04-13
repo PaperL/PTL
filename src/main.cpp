@@ -235,14 +235,21 @@ int main() {
     catch (sjtu::exception xept) {
         std::cout << xept.what() << std::endl;
     }*/
-    int k1 = 1;
-    long int k2 = 1;
-    long long int k3;
-    char c;
-    char *s1 = new char[10], s2[10];
-    qRead(k1, k2, k3, c, s1, s2);
-    qWrite("===============\n");
-    qWriteSL('-', '.', k1, k2, k3, c, s1, s2);
+    /*std::cout << typeid(int[10]).name() << std::endl;
+    std::cout << typeid(int[]).name() << std::endl;
+    std::cout << typeid(std::remove_all_extents_t<int[10]>).name() << std::endl;
+    std::cout << typeid(std::remove_pointer_t<int[10]>).name() << std::endl;
+    std::cout << (sameType<decltype(int(1)), std::remove_all_extents_t<int[10]>> ||
+                  sameType<decltype(int(1)), std::remove_pointer_t<int[10]>>) << std::endl;
+//    static_assert(sameType<decltype(_value), std::remove_all_extents_t<T>> ||
+//                  sameType<decltype(_value), std::remove_pointer_t<T>>,
+//                  "In PTF: setT get array and value of different type");*/
+    int a[4];
+    setT(a+1, 2,2);
+    for (auto i : a)std::cout << i << std::endl;
+    setT(a, 4);
+    for (auto i : a)std::cout << i << std::endl;
+
     /*
     qWrite(k1);
     qWrite(k2);
