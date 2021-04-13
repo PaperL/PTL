@@ -3,23 +3,17 @@
 #define PTL_PTF_H
 
 #include <cstdio>
+#include <exception>
 
 namespace PTF {
 #pragma region PTF_DESCRIPTION
 /*
  * "PaperL's Template Function"
  *
- * Version: 1.0
- * Last Update Time: 2021.4.12
+ * Version: 1.01
+ * Last Update Time: 2021.4.13
  * Last Update Content:
- *      修改带分隔符的 qWrite 函数分隔符传参方式(参数->形参)
- *      扩展 qWrite 函数功能(支持行末符, 分隔字符串)
- *      采用简写函数模板(c++20)重写部分函数
- *      采用 pragma region 整理代码
- *      用 fold expression 及制约函数(c++20) 重写部分函数
- *          0.8 版本之前的 IO 函数会传参 n^2 数量级次, 极大影响效率
- *      采用变量模板(c++14)重写 PTF_TYPE
- *      新增 absT, setT 函数
+ *      修正 qRead 读到意外 EOF 导致死循环的问题, 返回 std::ios_base::failure
  * Going to develop:
  *      IO 函数支持浮点, qRead 函数支持字符
  *      增加 PTF_ALGORITHM
@@ -90,10 +84,12 @@ namespace PTF {
 //  注意 qWrite 及相关函数仅支持 字符/整形
 
     inline void qRead(auto &_k) {
-        char _c = getchar();
+        int _c = getchar();
         bool _sign = false;
         _k = 0;
         while (_c < '0' || _c > '9') {
+            if (_c < 0 || _c > 255)
+                throw std::ios_base::failure("In PTF: qRead get unexpected character (may be EOF)\n");
             if (_c == '-') _sign = true;
             _c = getchar();
         }

@@ -235,16 +235,7 @@ int main() {
     catch (sjtu::exception xept) {
         std::cout << xept.what() << std::endl;
     }*/
-    int a = 1;
-    char b = 'z';
-    size_t c = 123;
-    qWrite(a, b);
-    putchar(10);
-    qWriteS('-', a, b, c, b, a);
-    putchar(10);
-    qWriteL('.', c, a);
-    putchar(10);
-    qWriteSL(", ", '=', a, b, c);
-    // qWrite<", ">(a, b, c);
+    int k;
+    qRead(k);
     return 0;
 }
