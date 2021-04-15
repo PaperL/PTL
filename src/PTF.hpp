@@ -13,12 +13,16 @@ namespace PTF {
 /*
  * "PaperL's Template Function"
  *
- * Version: 1.15
- * Last Update Time: 2021.4.13
+ * Version: 1.16
+ * Last Stable Version: 1.01
+ * Last Update Time: 2021.4.15
  * Last Update Content:
- *      重置 setT 函数
+ *      修正 qWrite 输出 0 时为空白的 bug
+ *      修正 qWrite 多参数函数参数未用 &
  *      正在研究如何让函数支持修改右值(&&)
+ *      OJ 似乎支持至 c++17 故 c++20 的 std::remove_cvref 可能无法使用
  * Going to develop:
+ *      IO 函数对 const char* 支持有问题！
  *      让同一函数同时支持数组和指针
  *      IO 函数支持浮点
  *      增加 PTF_ALGORITHM
@@ -155,39 +159,37 @@ namespace PTF {
 
     template<typename T>
     inline void qWrite(const T &_k) {
-        if constexpr(sameType<std::remove_const_t<T>, char>) putchar(_k);
-        else if constexpr (sameType<std::remove_const_t<T>, char *>) {
-            size_t _p = 0;
-            while (_k[_p] != '\0') putchar(_k[_p++]);
-        }
-        else if constexpr (sameType<std::remove_extent_t<T>, char>) {
-            size_t _p = 0;
-            const size_t _l = std::extent_v<T>;
-            while (_k[_p] != '\0' && _p < _l) putchar(_k[_p++]);
-        }
+        if constexpr(sameType<T, char>) putchar(_k);
+        else if constexpr (sameType<T, char *>)
+            for (size_t _p = 0; _k[_p] != '\0'; _p++) putchar(_k[_p]);
+        else if constexpr (sameType<std::remove_extent_t<T>, char>)
+            for (size_t _p = 0, _l = std::extent_v<T>; _k[_p] != '\0' && _p < _l; _p++) putchar(_k[_p]);
         else if constexpr (std::is_integral_v<T>) {
-            size_t _p = 0;
-            T _ck(_k);
-            char _c[32];
-            if constexpr (std::is_signed_v<T>)
-                if (_ck < 0) putchar('-'), _ck = -_ck;
-            while (_ck) _c[_p++] = _ck % 10 + 48, _ck /= 10;
-            while (_p--) putchar(_c[_p]);
+            if (_k == 0) putchar('0');
+            else {
+                size_t _p = 0;
+                T _ck(_k);
+                char _c[32];
+                if constexpr (std::is_signed_v<T>)
+                    if (_ck < 0) putchar('-'), _ck = -_ck;
+                while (_ck) _c[_p++] = _ck % 10 + 48, _ck /= 10;
+                while (_p--) putchar(_c[_p]);
+            }
         }
-        else static_assert(sameType<T, std::remove_cvref<T>[1]>,
+        else static_assert(sameType<T, std::remove_cv<T>[1]>,
                            "In PTF: qWrite get argument of unexpected type\n");
     }
 
-    inline void qWrite(auto ... _argList) { (qWrite(_argList), ...); }
+    inline void qWrite(const auto &... _argList) { (qWrite(_argList), ...); }
 
     // _s for split character(other type is also acceptable)
-    inline void qWriteS(auto _s, auto... _argList) { ((qWrite(_argList), qWrite(_s)), ...); }
+    inline void qWriteS(const auto & _s, const auto &... _argList) { ((qWrite(_argList), qWrite(_s)), ...); }
 
     // _eol for end of line character
-    inline void qWriteL(char _eol, auto... _argList) { (qWrite(_argList), ...), qWrite(_eol); }
+    inline void qWriteL(const auto & _eol, const auto &... _argList) { (qWrite(_argList), ...), qWrite(_eol); }
 
     // 注意最后 _eol 之前无 _s
-    inline void qWriteSL(auto _s, auto _eol, auto _first, auto... _argList) {
+    inline void qWriteSL(const auto & _s, const auto & _eol, const auto & _first, const auto &... _argList) {
         qWrite(_first), ((qWrite(_s), qWrite(_argList)), ...), qWrite(_eol);
     }
 

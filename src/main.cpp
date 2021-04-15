@@ -235,31 +235,16 @@ int main() {
     catch (sjtu::exception xept) {
         std::cout << xept.what() << std::endl;
     }*/
-    /*std::cout << typeid(int[10]).name() << std::endl;
-    std::cout << typeid(int[]).name() << std::endl;
-    std::cout << typeid(std::remove_all_extents_t<int[10]>).name() << std::endl;
-    std::cout << typeid(std::remove_pointer_t<int[10]>).name() << std::endl;
-    std::cout << (sameType<decltype(int(1)), std::remove_all_extents_t<int[10]>> ||
-                  sameType<decltype(int(1)), std::remove_pointer_t<int[10]>>) << std::endl;
-//    static_assert(sameType<decltype(_value), std::remove_all_extents_t<T>> ||
-//                  sameType<decltype(_value), std::remove_pointer_t<T>>,
-//                  "In PTF: setT get array and value of different type");*/
-    int a[4];
-    setT(a+1, 2,2);
-    for (auto i : a)std::cout << i << std::endl;
-    setT(a, 4);
-    for (auto i : a)std::cout << i << std::endl;
 
-    /*
-    qWrite(k1);
-    qWrite(k2);
-    qWrite(k3);
-    qWrite(c);
-    qWrite(c2);
-    qWrite(s1);
-    qWrite(s2);
-    qWrite(s3);
-    qWrite(s4);
-*/
+    /*std::cout << typeid(decltype("123")).name() << std::endl;
+    std::cout << typeid(const char[4]).name() << std::endl;
+    std::cout << typeid(char[4]).name() << std::endl;
+    std::cout << std::is_same_v<char, std::remove_cv_t<decltype("123")>> << std::endl;
+    std::cout << std::is_same_v<char, std::remove_all_extents_t<decltype("123")>> << std::endl;
+    std::cout << std::is_same_v<char, std::remove_cvref_t<std::remove_all_extents_t<decltype("123")>>> << std::endl;
+    std::cout << std::is_same_v<char, std::remove_extent_t<std::remove_cvref_t<decltype("123")>>> << std::endl;
+    */
+    // qWrite("123");
+    qWrite("56","123",123);
     return 0;
 }
