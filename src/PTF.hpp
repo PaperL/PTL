@@ -13,14 +13,12 @@ namespace PTF {
 /*
  * "PaperL's Template Function"
  *
- * Version: 1.16
+ * Version: 1.18
  * Last Stable Version: 1.01
  * Last Update Time: 2021.4.15
  * Last Update Content:
- *      修正 qWrite 输出 0 时为空白的 bug
- *      修正 qWrite 多参数函数参数未用 &
  *      正在研究如何让函数支持修改右值(&&)
- *      OJ 似乎支持至 c++17 故 c++20 的 std::remove_cvref 可能无法使用
+ *      由于本人电脑 Clion 因不明原因不再支持 remove_cvref 故弃用或改用 remove_cv
  * Going to develop:
  *      IO 函数对 const char* 支持有问题！
  *      让同一函数同时支持数组和指针
@@ -62,8 +60,8 @@ namespace PTF {
     inline void setT(T &_array, const auto &_value, size_t _n = 0) {
         static_assert(std::is_array_v<T> || std::is_pointer_v<T>,
                       "In PTF: setT get first argument of not array type");
-        static_assert(sameType<std::remove_cvref_t<decltype(_value)>, std::remove_all_extents_t<T>> ||
-                      sameType<std::remove_cvref_t<decltype(_value)>, std::remove_pointer_t<T>>,
+        static_assert(sameType<decltype(_value), std::remove_all_extents_t<T>> ||
+                      sameType<decltype(_value), std::remove_pointer_t<T>>,
                       "In PTF: setT get array and value of different type");
         if constexpr (std::is_array_v<T>)
             for (auto &_item:_array)_item = _value;
@@ -143,7 +141,7 @@ namespace PTF {
             }
             if (_sign) _k = -_k;
         }
-        else static_assert(sameType<T, std::remove_cvref<T>[1]>,
+        else static_assert(sameType<T, std::remove_reference_t<T>[1]>,
                            "In PTF: qRead get argument of unexpected type\n");
     }
 
@@ -183,13 +181,13 @@ namespace PTF {
     inline void qWrite(const auto &... _argList) { (qWrite(_argList), ...); }
 
     // _s for split character(other type is also acceptable)
-    inline void qWriteS(const auto & _s, const auto &... _argList) { ((qWrite(_argList), qWrite(_s)), ...); }
+    inline void qWriteS(const auto &_s, const auto &... _argList) { ((qWrite(_argList), qWrite(_s)), ...); }
 
     // _eol for end of line character
-    inline void qWriteL(const auto & _eol, const auto &... _argList) { (qWrite(_argList), ...), qWrite(_eol); }
+    inline void qWriteL(const auto &_eol, const auto &... _argList) { (qWrite(_argList), ...), qWrite(_eol); }
 
     // 注意最后 _eol 之前无 _s
-    inline void qWriteSL(const auto & _s, const auto & _eol, const auto & _first, const auto &... _argList) {
+    inline void qWriteSL(const auto &_s, const auto &_eol, const auto &_first, const auto &... _argList) {
         qWrite(_first), ((qWrite(_s), qWrite(_argList)), ...), qWrite(_eol);
     }
 

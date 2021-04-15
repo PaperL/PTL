@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(PTL)
 set(CMAKE_CXX_STANDARD 20)
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fconcepts")
 include_directories(
         ${PROJECT_SOURCE_DIR}/src/
 )
