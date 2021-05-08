@@ -7,14 +7,14 @@
 #include "priority_queue.hpp"
 #include "deque.hpp"
 #include "segment_tree.hpp"
-// #include "map.hpp"
+#include "map.hpp"
 
 #include "PTF.hpp"
 
-using namespace sjtu;
-using namespace PTF;
-using namespace PTL;
-
+//using namespace sjtu;
+//using namespace PTF;
+//using namespace PTL;
+/*
 void vectorTest() {
 
     vector<int> a;
@@ -159,7 +159,6 @@ void priority_queueTest() {
     std::cout << "===cp8===" << std::endl;
 }
 
-/*
 void dequeTest() {
     deque<int, 5, 2> dq;
     for (int i = 0; i < 10; ++i)dq.push_back(i);
@@ -189,7 +188,6 @@ void dequeTest() {
     std::cout << *it << std::endl;
     dq.debugPrint();
 }
-*/
 
 void segment_treeTest() {
     int a[7];
@@ -206,9 +204,57 @@ void segment_treeTest() {
         std::cout << tree.query(i, i + 1) << ", ";
     std::cout << std::endl;
 }
-
+*/
 void mapTest() {
+    std::cout << "Map Test Begin" << std::endl;
+    sjtu::map<int, int> a;
+    std::cout << "Constructor Finish" << std::endl;
 
+    int l = -3, r = 8;
+
+    for (int i = l; i <= r; ++i) a.insert(sjtu::pair<int, int>(i, i * 100));
+    for (int i = l; i <= r; ++i) std::cout << a[i] << " ";
+    std::cout << std::endl;
+    for (int i = l; i <= r; ++i) a[i] = i * 101;
+    for (int i = l; i <= r; ++i) std::cout << a[i] << " ";
+    std::cout << std::endl;
+    l = -5;
+    for (int i = r; i >= l; --i) a[i] = i * i * (-4) + i * 8;
+    for (int i = l; i <= r; ++i) std::cout << a[i] << " ";
+    std::cout << std::endl;
+    std::cout << a.size() << std::endl;
+    std::cout << "Part 1 Finish" << std::endl;
+
+    std::cout << (*(a.find(4))).second << std::endl;
+    std::cout << a.size() << std::endl;
+    a.erase(a.find(4));
+    std::cout << a.size() << std::endl;
+    // for (int i = l; i <= r; ++i) std::cout << a.at(i) << " ";
+    for (int i = l; i <= r; ++i) std::cout << a[i] << " ";
+    std::cout << std::endl;
+    std::cout << "Part 2 Finish" << std::endl;
+
+    for (int i = l; i <= r; i += 2) a[i] = i * i * (-2) + 4 * i;
+    for (int i = l + 1; i <= r; i += 2) a[i] = -i * i * (-2) - 4 * i;
+    for (int i = l; i <= r; i++) std::cout << a[i] << ", ";
+    std::cout << std::endl;
+    auto it = a.begin();
+    std::cout << ((*it).first) << ", " << ((*it).second) << std::endl;
+    /*it = a.end();
+    it--;
+    std::cout << ((*it).first) << ", " << ((*it).second) << std::endl;*/
+    while (it != a.end()) {
+        std::cout << ((*it).first) << ", " << ((*it).second) << std::endl;
+        ++it;
+    }
+
+    a.count(3);
+
+    auto it1 = a.begin();
+    auto it2 = a.cbegin();
+    if(it1==it2) std::cout << "why" << std::endl;
+
+    std::cout << "All Test Finish" << std::endl;
 }
 
 int main() {
@@ -245,6 +291,9 @@ int main() {
     std::cout << std::is_same_v<char, std::remove_extent_t<std::remove_cvref_t<decltype("123")>>> << std::endl;
     */
     // qWrite("123");
-    qWrite("56","123",123);
+    // qWrite("56","123",123);
+
+    mapTest();
+
     return 0;
 }
