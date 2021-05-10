@@ -9,11 +9,14 @@
 #include "segment_tree.hpp"
 #include "map.hpp"
 
+#include <cmath>
+
 #include "PTF.hpp"
 
 using namespace sjtu;
 using namespace PTF;
 using namespace PTL;
+
 /*
 void vectorTest() {
 
@@ -204,7 +207,6 @@ void segment_treeTest() {
         std::cout << tree.query(i, i + 1) << ", ";
     std::cout << std::endl;
 }
-*/
 
 int seed = 123123;
 
@@ -232,8 +234,8 @@ void mapTest() {
         std::cout << "op: [" << k << "] = " << i << std::endl;
         a[k] = i;
         a.checkTree();
-        /*if (i % (maxn / 5) == 0)
-            std::cout << "op1: " << i << "/" << maxn << std::endl;*/
+        //if (i % (maxn / 5) == 0)
+        //    std::cout << "op1: " << i << "/" << maxn << std::endl;
     }
 
     a.printTree();
@@ -245,15 +247,26 @@ void mapTest() {
         // if (i == 17)break;
         a.printTree();
         a.checkTree();
-        /*if (i % (maxn / 5) == 0)
-            std::cout << "op2: " << i << "/" << maxn << std::endl;*/
+        //if (i % (maxn / 5) == 0)
+        //    std::cout << "op2: " << i << "/" << maxn << std::endl;
     }
     // a.printTree();
 }
+*/
 
 int main() {
 
-    mapTest();
-
+    int k = 1023;
+    /*qWrite(intLog2(k),'\n');
+    qWriteS('\n',
+            intLog2(1024),
+            intLog2(2049),
+            intLog2(2 << 19),
+            uintLog2(1 << 31),
+            uintLog2(((unsigned int)1 << 31)));*/
+    //std::cout << std::is_signed_v<short> << std::endl;
+    qWrite(int(1 << 31), '\n');
+    qWrite(short(1 << 15), '\n');
+    // std::cout << int(1<<30) << std::endl << int(1<<31) << std::endl;
     return 0;
 }
