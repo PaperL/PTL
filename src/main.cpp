@@ -7,14 +7,14 @@
 #include "priority_queue.hpp"
 #include "deque.hpp"
 #include "segment_tree.hpp"
-// #include "map.hpp"
+#include "map.hpp"
 
 #include "PTF.hpp"
 
 using namespace sjtu;
 using namespace PTF;
 using namespace PTL;
-
+/*
 void vectorTest() {
 
     vector<int> a;
@@ -159,7 +159,6 @@ void priority_queueTest() {
     std::cout << "===cp8===" << std::endl;
 }
 
-/*
 void dequeTest() {
     deque<int, 5, 2> dq;
     for (int i = 0; i < 10; ++i)dq.push_back(i);
@@ -189,7 +188,6 @@ void dequeTest() {
     std::cout << *it << std::endl;
     dq.debugPrint();
 }
-*/
 
 void segment_treeTest() {
     int a[7];
@@ -206,45 +204,56 @@ void segment_treeTest() {
         std::cout << tree.query(i, i + 1) << ", ";
     std::cout << std::endl;
 }
+*/
+
+int seed = 123123;
+
+int myRand() {
+    seed ^= seed << 10;
+    seed ^= seed >> 20;
+    seed ^= seed << 5;
+    seed ^= seed >> 7;
+    return seed;
+}
 
 void mapTest() {
+    sjtu::map<int, int> a;
+    a.printTree();
+    int maxn = 10;
+    int num[maxn];
+    for (int i = 1; i <= maxn; ++i) num[i] = 0;
+    for (int i = 1; i <= maxn; ++i) {
+        int k = myRand() % (maxn << 2);
+        if (a.find(k) != a.end()) {
+            num[i] = -1;
+            continue;
+        }
+        num[i] = k;
+        std::cout << "op: [" << k << "] = " << i << std::endl;
+        a[k] = i;
+        a.checkTree();
+        /*if (i % (maxn / 5) == 0)
+            std::cout << "op1: " << i << "/" << maxn << std::endl;*/
+    }
 
+    a.printTree();
+
+    for (int i = 1; i <= maxn; ++i) {
+        if (num[i] == -1) continue;
+        a.erase(a.find(num[i]));
+        std::cout << "delCheckPrint" << i << std::endl;
+        // if (i == 17)break;
+        a.printTree();
+        a.checkTree();
+        /*if (i % (maxn / 5) == 0)
+            std::cout << "op2: " << i << "/" << maxn << std::endl;*/
+    }
+    // a.printTree();
 }
 
 int main() {
-    /*
-    printf("\033[1mThis is RED.\n\033[0m");
-    printf("\033[2mThis is RED.\n\033[0m");
-    printf("\033[3mThis is RED.\n\033[0m");
-    printf("\033[4mThis is RED.\n\033[0m");
-    printf("\033[5mThis is RED.\n\033[0m");
-    printf("\033[6mThis is RED.\n\033[0m");
-    printf("\033[7mThis is RED.\n\033[0m");
-    printf("\033[8mThis is RED.\n\033[0m");
-    printf("\033[9mThis is RED.\n\033[0m");
-    printf("\033[31m\033[5AThis is NOT RED.\n\033[0m");
-    printf("\033[2J");
-    return 0;*/
-    /*
-    try {
-        //vectorTest();
-        //priority_queueTest();
-        //dequeTest();
-        mapTest();
-    }
-    catch (sjtu::exception xept) {
-        std::cout << xept.what() << std::endl;
-    }*/
 
-    /*std::cout << typeid(decltype("123")).name() << std::endl;
-    std::cout << typeid(const char[4]).name() << std::endl;
-    std::cout << typeid(char[4]).name() << std::endl;
-    std::cout << std::is_same_v<char, std::remove_cv_t<decltype("123")>> << std::endl;
-    std::cout << std::is_same_v<char, std::remove_all_extents_t<decltype("123")>> << std::endl;
-    std::cout << std::is_same_v<char, std::remove_cvref_t<std::remove_all_extents_t<decltype("123")>>> << std::endl;
-    std::cout << std::is_same_v<char, std::remove_extent_t<std::remove_cvref_t<decltype("123")>>> << std::endl;
-    */
-    // qWrite("123");
-    qWrite("56","123",123);
+    mapTest();
+
     return 0;
 }

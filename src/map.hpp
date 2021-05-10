@@ -38,7 +38,7 @@ namespace sjtu {
                                       lChild(nullptr), rChild(nullptr), parent(nullptr) {}
 
             ~Node() { delete element; }
-        } *const NilPtr, *beginNodePtr, *&rootPtr;
+        } *const NilPtr, *beginNodePtr;//, *&rootPtr;
         // *& 为引用, 不能改变引用的对象, 操作该值即操作引用值
 
         Compare compare;
@@ -53,7 +53,7 @@ namespace sjtu {
 
 #pragma endregion DECLARATION
 
-// #define rootPtr (NilPtr->lChild)
+#define ROOT_PTR (NilPtr->lChild)
 
 #pragma region TREEOPERATION
     private:
@@ -80,7 +80,7 @@ namespace sjtu {
             x->rChild = y;
         }
 
-        void _transplant(Node *const x, Node *const y) {
+        void _transplant(Node *const x, Node *const y) { // replace x with y
             if (x == x->parent->lChild)
                 x->parent->lChild = y;
             else x->parent->rChild = y;
@@ -91,7 +91,7 @@ namespace sjtu {
             Node *y = nullptr;
             while (x->parent->color == RED) {
                 if (x->parent->parent->lChild == x->parent) {
-                    y = x->parent->parent->rChild;
+                    y = x->parent->parent->rChild; // y for uncle
                     if (y->color == RED) {
                         x->parent->color = y->color = BLACK;
                         y->parent->color = RED;
@@ -117,37 +117,38 @@ namespace sjtu {
                     }
                 }
             }
-            rootPtr->color = BLACK;
+            ROOT_PTR->color = BLACK;
         }
 
         void _eraseFixup(Node *x) {
-            for (Node *y; x->parent != NilPtr && x->color == BLACK;) {
+            Node *y = nullptr;
+            while (x->parent != NilPtr && x->color == BLACK) {
                 if (x->parent->lChild == x) {
                     y = x->parent->rChild;
                     if (y->color == RED) lRotate(y), _swap(y->color, y->lChild->color);
                     else if (y->lChild->color == BLACK && y->rChild->color == BLACK)
-                        y->color == RED, x = x->parent;
+                        y->color = RED, x = x->parent;
                     else {
                         if (y->rChild->color == BLACK) {
                             rRotate(y->lChild), _swap(y->color, y->parent->color);
                             y = y->parent;
                         }
                         lRotate(y), _swap(y->color, y->lChild->color), y->rChild->color = BLACK;
-                        x = rootPtr;
+                        x = ROOT_PTR;
                     }
                 }
                 else {
                     y = x->parent->lChild;
-                    if (y->color == RED) lRotate(y), _swap(y->color, y->rChild->color);
+                    if (y->color == RED) rRotate(y), _swap(y->color, y->rChild->color);
                     else if (y->lChild->color == BLACK && y->rChild->color == BLACK)
-                        y->color == RED, x = x->parent;
+                        y->color = RED, x = x->parent;
                     else {
                         if (y->lChild->color == BLACK) {
                             lRotate(y->rChild), _swap(y->color, y->parent->color);
                             y = y->parent;
                         }
                         rRotate(y), _swap(y->color, y->rChild->color), y->lChild->color = BLACK;
-                        x = rootPtr;
+                        x = ROOT_PTR;
                     }
                 }
             }
@@ -185,7 +186,7 @@ namespace sjtu {
         }
 
         Node *_searchKey(const Key &key) const {
-            Node *p = rootPtr;
+            Node *p = ROOT_PTR;
             while (p != NilPtr) {
                 bool b1 = compare(key, p->element->first),
                         b2 = compare(p->element->first, key);
@@ -197,17 +198,19 @@ namespace sjtu {
 
         Node *_insertEle(value_type *elePtr) {
             Node *newNode = new Node(elePtr, RED, NilPtr, NilPtr);
-            Node *x = rootPtr, *y = NilPtr;
-            while (x != NilPtr) {
-                y = x;
-                x = compare(elePtr->first, x->element->first)
-                    ? x->lChild : x->rChild;
+            Node *p = ROOT_PTR, *fa = NilPtr;
+            while (p != NilPtr) {
+                fa = p;
+                p = compare(elePtr->first, p->element->first)
+                    ? p->lChild : p->rChild;
             }
-            if (y == NilPtr || compare(elePtr->first, y->element->first))
-                y->lChild = newNode;
-            else y->rChild = newNode;
-            newNode->parent = y;
+            if (fa == NilPtr || compare(elePtr->first, fa->element->first))
+                fa->lChild = newNode;
+            else fa->rChild = newNode;
+            newNode->parent = fa;
             _insertFixup(newNode);
+
+            NilPtr->parent = NilPtr; // NilPtr->parent 功能存疑
 
             ++elementNum;
             if (beginNodePtr != NilPtr) {
@@ -219,27 +222,31 @@ namespace sjtu {
             return newNode;
         }
 
-        void _eraseNode(Node *x) {
-            if (x == beginNodePtr) beginNodePtr = findSuc(beginNodePtr);
-            nodeColorENUM col = x->color;
-            Node *y;
-            if (x->lChild == NilPtr) y = x->rChild, _transplant(x, x->rChild);
-            else if (x->rChild == NilPtr) y = x->lChild, _transplant(x, x->lChild);
+        void _eraseNode(Node *p) {
+            if (p == beginNodePtr) beginNodePtr = findSuc(beginNodePtr);
+            nodeColorENUM clr = p->color;
+            Node *replaceNodePtr;
+            if (p->lChild == NilPtr) replaceNodePtr = p->rChild, _transplant(p, replaceNodePtr);
+            else if (p->rChild == NilPtr) replaceNodePtr = p->lChild, _transplant(p, replaceNodePtr);
             else {
-                Node *z = findMin(x->rChild);
-                col = z->color;
-                y = z->rChild;
-                if (z->parent != x) {  // what is Nil.parent?
-                    _transplant(z, z->rChild);
-                    z->rChild = x->rChild;
+                Node *nxtNodePtr = findMin(p->rChild);
+                clr = nxtNodePtr->color;
+                replaceNodePtr = nxtNodePtr->rChild;
+                if (nxtNodePtr->parent != p) {
+                    _transplant(nxtNodePtr, replaceNodePtr);
+                    nxtNodePtr->rChild = p->rChild;
                 }
-                z->rChild->parent = z;
-                _transplant(x, z);
-                z->color = x->color, z->lChild = x->lChild;
-                z->lChild->parent = z;
+                nxtNodePtr->rChild->parent = nxtNodePtr; // why assure Nil.parent = nxtNode
+
+                _transplant(p, nxtNodePtr);
+                nxtNodePtr->color = p->color;
+                nxtNodePtr->lChild = p->lChild;
+                nxtNodePtr->lChild->parent = nxtNodePtr;
             }
-            delete x;
-            if (col == BLACK) _eraseFixup(y);
+            delete p;
+            if (clr == BLACK) _eraseFixup(replaceNodePtr);
+
+            NilPtr->parent = NilPtr; // NilPtr->parent 功能存疑
 
             --elementNum;
         }
@@ -404,25 +411,33 @@ namespace sjtu {
 
 #pragma region BASICFUNCTION
     public:
-        map() : elementNum(0), NilPtr(new Node()), beginNodePtr(NilPtr), rootPtr(NilPtr->lChild) { rootPtr = NilPtr; }
+        map() : elementNum(0), NilPtr(new Node()), beginNodePtr(NilPtr) {
+            NilPtr->parent = NilPtr;
+            NilPtr->lChild = NilPtr; // rootPtr
+            NilPtr->rChild = NilPtr;
+        }
 
         map(const map &other) : map() {
-            copyDfs(NilPtr, this->rootPtr, other.rootPtr, other.NilPtr);
+            copyDfs(NilPtr, ROOT_PTR, other.NilPtr->lChild, other.NilPtr);
             elementNum = other.elementNum;
-            beginNodePtr = findMin(this->rootPtr);
+            beginNodePtr = findMin(ROOT_PTR);
         }
 
         map &operator=(const map &other) {
             if (&other == this) return *this;
-            _destroy(rootPtr);
+            _destroy(ROOT_PTR);
+            NilPtr->parent = NilPtr;
+            NilPtr->lChild = NilPtr; // rootPtr
+            NilPtr->rChild = NilPtr;
 
-            copyDfs(NilPtr, this->rootPtr, other.rootPtr, other.NilPtr);
+            copyDfs(NilPtr, ROOT_PTR, other.NilPtr->lChild, other.NilPtr);
             elementNum = other.elementNum;
-            beginNodePtr = findMin(this->rootPtr);
+            beginNodePtr = findMin(ROOT_PTR);
+            return *this;
         }
 
         ~map() {
-            _destroy(rootPtr);
+            _destroy(ROOT_PTR);
             delete NilPtr;
         }
 
@@ -467,8 +482,10 @@ namespace sjtu {
 
         void clear() {
             elementNum = 0;
-            _destroy(rootPtr);
-            rootPtr = NilPtr;
+            _destroy(ROOT_PTR);
+            NilPtr->parent = NilPtr;
+            NilPtr->lChild = NilPtr; // rootPtr
+            NilPtr->rChild = NilPtr;
             beginNodePtr = NilPtr;
         }
 
@@ -495,7 +512,53 @@ namespace sjtu {
 
 #pragma endregion USERFUNCTION
 
-#undef rootPtr
+#pragma region DEBUG
+
+        void printDfs(Node *fa, Node *p, std::string path) {
+            if (p == NilPtr) std::cout << "Nil:            " << path << std::endl;
+            else
+                std::cout << p << " " << (p->color == BLACK ? "Black: " : "Red:   ")
+                          << path << " = " << p->element->first << std::endl;
+            if (fa == p || p == NilPtr)return;
+            printDfs(p, p->lChild, path + "-L");
+            printDfs(p, p->rChild, path + "-R");
+        }
+
+        void printTree() {
+            std::cout << "{==========Print==========" << std::endl;
+            std::cout << "Nil: " << NilPtr << std::endl;
+            printDfs(NilPtr, NilPtr->lChild, "r-L");
+            printDfs(NilPtr, NilPtr->rChild, "r-R");
+            std::cout << "^^^^^^^^^^Finish^^^^^^^^^}\n" << std::endl;
+        }
+
+        int checkDfs(Node *fa, Node *p) {
+            if (p == NilPtr) return 0;
+            if (fa == p) {
+                std::cout << "ERR: fa == p" << std::endl;
+                return 0;
+            }
+            if (fa->color == RED && p->color != BLACK) {
+                std::cout << "ERR: fa and son both RED" << std::endl;
+                return 0;
+            }
+            int kl = checkDfs(p, p->lChild), kr = checkDfs(p, p->rChild);
+            if (kl - kr != 0) {
+                std::cout << "ERR: l-r != 0" << std::endl;
+                return 0;
+            }
+            if (p->color == BLACK) return (kl + 1);
+            else return kl;
+        }
+
+        void checkTree() {
+            int ret = checkDfs(NilPtr, NilPtr->lChild);
+            // std::cout << "max black: " << ret << std::endl;
+        }
+
+#pragma endregion DEBUG
+
+#undef ROOT_PTR
     };
 
 }
